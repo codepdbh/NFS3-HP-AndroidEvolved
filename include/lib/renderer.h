@@ -53,6 +53,10 @@ private:
     x86::reg32      m_height;
     x86::reg32      m_depth;
     x86::reg32      m_colorPalette[256];
+#ifdef __ANDROID__
+    unsigned int m_presentProgram = 0;
+    unsigned int m_presentVao = 0;
+#endif
 };
 
 }

@@ -3,7 +3,7 @@
 
 #include <lib/winapp.h>
 #include <winapi/types.h>
-#include <SDL3/SDL.h>
+#include <SDL_timer.h>
 
 namespace win32
 {
@@ -19,7 +19,7 @@ public:
 
     void cancel();
 private:
-    static Uint32 timerCallback(void* data, SDL_TimerID timerID, Uint32 interval);
+    static Uint32 timerCallback(Uint32 interval, void* data);
 
 private:
     WinApplication* m_app;

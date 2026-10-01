@@ -4,13 +4,17 @@
 #include    <cstdint>
 #include    <cstdlib>
 
-#ifdef _MSC_VER
+#ifdef __ANDROID__
+#include <android/log.h>
+#define NFS2_ASSERT(x) \
+    do { if (!(x)) __android_log_assert(#x, "NFS3/CPU", "%s:%d: %s", __FILE__, __LINE__, #x); } while (false)
+#elif defined(_MSC_VER)
 # define __restrict__ __restrict
 # define NFS2_ASSERT(x)         \
     if (! (x)) __debugbreak()
 #else
 # define NFS2_ASSERT(x)         \
-    if (! (x)) asm("int3")
+    do { if (!(x)) __builtin_trap(); } while (false)
 #endif
 #define NFS2_USE(x)             \
     (void)x

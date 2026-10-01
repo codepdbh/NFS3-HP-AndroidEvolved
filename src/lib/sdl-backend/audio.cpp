@@ -1,61 +1,84 @@
 #include <lib/audio.h>
 #include <lib/mutex.h>
-#include <SDL3/SDL.h>
+#include <SDL_mutex.h>
+#include <SDL_log.h>
 #include <vector>
 #include <algorithm>
+#include <mutex>
 
 namespace win32
 {
+SDL_AudioDeviceID AudioDevice::s_sharedId = 0;
+std::vector<AudioDevice*> AudioDevice::s_devices;
+static std::mutex s_audioLifecycle;
 
 static const x86::reg32 s_channelCount = 2;
 static const x86::reg32 s_sampleCount = 4096;
 static const x86::reg32 s_sampleSize = s_sampleCount * s_channelCount;
 
 AudioDevice::AudioDevice()
-    :   m_stream(nullptr)
+    :   m_id(0)
 {
-    SDL_AudioSpec audioSpec;
-    audioSpec.format   = SDL_AUDIO_S16;
-    audioSpec.channels = s_channelCount;
-    audioSpec.freq     = 22050;
-    m_stream = SDL_OpenAudioDeviceStream(
-        SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
-        &audioSpec,
+    std::lock_guard<std::mutex> lifecycle(s_audioLifecycle);
+    SDL_AudioSpec audioSpecIn =
+    {
+        22050,
+        AUDIO_S16,
+        s_channelCount,
+        0,
+        256,
+        0,
+        0,
         &audioCallback22050,
-        this);
+        nullptr
+    };
+    SDL_AudioSpec audioSpecReceived;
+    if(!s_sharedId) {
+        s_sharedId = SDL_OpenAudioDevice(nullptr, 0, &audioSpecIn, &audioSpecReceived, 0);
+        if(!s_sharedId) SDL_LogError(SDL_LOG_CATEGORY_AUDIO,"[NFS3][AUDIO] Device open: %s",SDL_GetError());
+        NFS2_ASSERT(s_sharedId);
+        SDL_Log("[NFS3][AUDIO] %d Hz, %u channels, %u samples",audioSpecReceived.freq,audioSpecReceived.channels,audioSpecReceived.samples);
+    }
+    m_id=s_sharedId;
+    SDL_LockAudioDevice(m_id); s_devices.push_back(this); SDL_UnlockAudioDevice(m_id);
 }
 
 AudioDevice::~AudioDevice()
 {
-    SDL_DestroyAudioStream(m_stream);
+    std::lock_guard<std::mutex> lifecycle(s_audioLifecycle);
+    SDL_LockAudioDevice(m_id);
+    s_devices.erase(std::remove(s_devices.begin(),s_devices.end(),this),s_devices.end());
+    const bool last=s_devices.empty();
+    SDL_UnlockAudioDevice(m_id);
+    if(last) { SDL_CloseAudioDevice(m_id); s_sharedId=0; }
 }
 
 void AudioDevice::play(AudioBuffer* buffer)
 {
-    if (m_playingBuffers.empty())
-        SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_stream));
-    m_playingBuffers.push_back(buffer);
+    SDL_LockAudioDevice(m_id);
+    if(std::find(m_playingBuffers.begin(),m_playingBuffers.end(),buffer)==m_playingBuffers.end()) m_playingBuffers.push_back(buffer);
+    SDL_UnlockAudioDevice(m_id);
+    SDL_PauseAudioDevice(m_id,0);
 }
 
 void AudioDevice::stop(AudioBuffer* buffer)
 {
+    SDL_LockAudioDevice(m_id);
     m_playingBuffers.erase(std::remove(m_playingBuffers.begin(), m_playingBuffers.end(), buffer), m_playingBuffers.end());
-    if (m_playingBuffers.empty())
-        SDL_PauseAudioDevice(SDL_GetAudioStreamDevice(m_stream));
+    bool empty=true;
+    for(auto* device:s_devices) if(!device->m_playingBuffers.empty()) empty=false;
+    SDL_UnlockAudioDevice(m_id);
+    if(empty) SDL_PauseAudioDevice(m_id,1);
 }
 
 
-void AudioDevice::audioCallback22050(void* userdata, SDL_AudioStream* stream, int additional_amount, int /*total_amount*/)
+void AudioDevice::audioCallback22050(void* userdata, x86::reg8* stream, int len)
 {
-    AudioDevice* audio = reinterpret_cast<AudioDevice*>(userdata);
-    std::vector<x86::reg8> buffer(additional_amount, 0);
-    for (std::vector<AudioBuffer*>::iterator it = audio->m_playingBuffers.begin();
-        it != audio->m_playingBuffers.end();
-        ++it)
-    {
-        (*it)->audioCallback22050(buffer.data(), additional_amount);
-    }
-    SDL_PutAudioStreamData(stream, buffer.data(), additional_amount);
+    // SDL invokes callbacks while holding this device's audio lock.
+    memset(stream,0,len);
+    NFS2_USE(userdata);
+    for(auto* device:s_devices)
+        for(auto* buffer:device->m_playingBuffers) buffer->audioCallback22050(stream,len);
     return;
 }
 
@@ -167,9 +190,9 @@ x86::reg32 AudioBuffer::lock()
 
 void AudioBuffer::unlock(x86::reg32 bufferWritten)
 {
-    SDL_LockAudioStream(m_device->stream());
+    SDL_LockAudioDevice(m_device->m_id);
     m_playStop += bufferWritten;
-    SDL_UnlockAudioStream(m_device->stream());
+    SDL_UnlockAudioDevice(m_device->m_id);
 }
 
 

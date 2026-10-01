@@ -3,7 +3,13 @@
 
 #include <x86.h>
 //#include <intrin.h>
+#include <cstring>
+#if defined(__aarch64__)
+// Integer SSE operations implement the guest MMX registers using native NEON.
+#include <third_party/sse2neon.h>
+#else
 #include <immintrin.h>
+#endif
 
 namespace x86
 {

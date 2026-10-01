@@ -1,9 +1,14 @@
 cmake_minimum_required(VERSION 3.15)
-project(nfs_recompiled LANGUAGES C CXX ASM)
+project(nfs_recompiled LANGUAGES C CXX)
 
 # options
 option(WITH_PEDANTIC_FPU "Compile pedantic FPU implementation" OFF)
 option(WITH_MMX "Enable MMX support" ON)
+option(BUILD_NFS2 "Build Need for Speed II SE" OFF)
+option(BUILD_NFS3 "Build Need for Speed III HP" ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # add compile definitions based on options
 if(WITH_PEDANTIC_FPU)
@@ -25,40 +30,68 @@ else()
     set(TARGET_WINDOWS FALSE)
 endif()
 
+option(NFS_WARNINGS_AS_ERRORS "Treat runtime/generated warnings as errors" OFF)
 if (MSVC)
-    add_compile_options(/W4 /WX)
+    add_compile_options(/W3)
+    if(NFS_WARNINGS_AS_ERRORS)
+        add_compile_options(/WX)
+    endif()
 else()
-    add_compile_options(-Wall -Wextra -Werror -Wstrict-aliasing=2)
+    add_compile_options(-Wall -Wextra -Wstrict-aliasing=2)
+    if(NFS_WARNINGS_AS_ERRORS)
+        add_compile_options(-Werror)
+    endif()
 endif()
 
-# When building for Windows we have a local copy of SDL3 under the
-# `sdl3` subdirectory.  Point CMake at it so find_package() will
+# When building for Windows we have a local copy of SDL2 under the
+# `sdl2` subdirectory.  Point CMake at it so find_package() will
 # locate the bundled config file automatically.
 if(TARGET_WINDOWS)
-    message(STATUS "Windows target detected – adding ${CMAKE_SOURCE_DIR}/sdl3/cmake to CMAKE_PREFIX_PATH for SDL3")
-    list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/sdl3/cmake")
-    set(SDL3_DIR "${CMAKE_SOURCE_DIR}/sdl3/cmake" CACHE PATH "SDL3 CMake directory")
+    message(STATUS "Windows target detected – adding ${CMAKE_SOURCE_DIR}/sdl2/cmake to CMAKE_PREFIX_PATH for SDL2")
+    list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/sdl2/cmake")
+    set(SDL2_DIR "${CMAKE_SOURCE_DIR}/sdl2/cmake" CACHE PATH "SDL2 CMake directory")
 endif()
 
-find_package(SDL3 REQUIRED)
-find_package(OpenGL REQUIRED)
+if(ANDROID)
+    if(NOT ANDROID_ABI STREQUAL "arm64-v8a")
+        message(FATAL_ERROR "This Android port supports arm64-v8a only")
+    endif()
+    if(BUILD_NFS2)
+        message(FATAL_ERROR "Android builds support only nfs3hp; set BUILD_NFS2=OFF")
+    endif()
+    set(SDL_SHARED ON CACHE BOOL "" FORCE)
+    set(SDL_STATIC OFF CACHE BOOL "" FORCE)
+    set(SDL_TEST OFF CACHE BOOL "" FORCE)
+    set(ANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES ON CACHE BOOL "" FORCE)
+    if(NOT SDL2_SOURCE_DIR)
+        message(FATAL_ERROR "Set SDL2_SOURCE_DIR to the SDL 2.32.10 source checkout")
+    endif()
+    add_subdirectory("${SDL2_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/SDL2")
+    set(NFS_GL_LIBRARY GLESv3 log android)
+else()
+    find_package(SDL2 REQUIRED)
+    find_package(OpenGL REQUIRED)
+    set(NFS_GL_LIBRARY OpenGL::GL)
+endif()
 
 # prefer modern imported targets if available
-if(TARGET SDL3::SDL3)
-    set(SDL3_LIB_TARGET SDL3::SDL3)
+if(TARGET SDL2::SDL2)
+    set(SDL2_LIB_TARGET SDL2::SDL2)
 else()
-    include_directories(${SDL3_INCLUDE_DIRS})
-    set(SDL3_LIB_TARGET ${SDL3_LIBRARIES})
+    include_directories(${SDL2_INCLUDE_DIRS})
+    set(SDL2_LIB_TARGET ${SDL2_LIBRARIES})
 endif()
 
-# SDL3main provides the WinMain→main entry-point shim required on Windows.
-# The modern config exposes it as a separate target; the legacy FindSDL3.cmake
-# already folds it into SDL3_LIBRARIES, so we only add it on top for the
+# SDL2main provides the WinMain→main entry-point shim required on Windows.
+# The modern config exposes it as a separate target; the legacy FindSDL2.cmake
+# already folds it into SDL2_LIBRARIES, so we only add it on top for the
 # imported-target path.
-if(TARGET SDL3::SDL3main)
-    set(SDL3_MAIN_TARGET SDL3::SDL3main)
+if(TARGET SDL2::SDL2main)
+    if(NOT ANDROID)
+        set(SDL2_MAIN_TARGET SDL2::SDL2main)
+    endif()
 else()
-    set(SDL3_MAIN_TARGET "")
+    set(SDL2_MAIN_TARGET "")
 endif()
 
 file(GLOB NFS2SE_DISASM_SOURCES
@@ -85,7 +118,7 @@ file(GLOB LIB_CPP_SOURCES
 
 # x87.asm provides 80-bit extended-precision FPU helpers and is only needed
 # (and only supported) on Linux with WITH_PEDANTIC_FPU=ON.
-if(WITH_PEDANTIC_FPU AND TARGET_WINDOWS)
+if(WITH_PEDANTIC_FPU AND (TARGET_WINDOWS OR ANDROID OR NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$"))
     message(FATAL_ERROR
         "WITH_PEDANTIC_FPU is not supported on Windows: the x87 NASM helper "
         "relies on Linux-specific 80-bit long double ABI conventions.")
@@ -105,9 +138,14 @@ if(WITH_PEDANTIC_FPU AND NOT TARGET_WINDOWS)
 endif()
 
 add_library(nfs_core STATIC ${LIB_CPP_SOURCES})
+if(ANDROID)
+    list(REMOVE_ITEM LIB_CPP_SOURCES "${CMAKE_SOURCE_DIR}/src/lib/renderer.cpp")
+    set_property(TARGET nfs_core PROPERTY SOURCES ${LIB_CPP_SOURCES}
+        "${CMAKE_SOURCE_DIR}/src/platform/android/renderer_gles.cpp")
+endif()
 target_include_directories(nfs_core PRIVATE
     ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(nfs_core PRIVATE ${SDL3_MAIN_TARGET} ${SDL3_LIB_TARGET} OpenGL::GL)
+target_link_libraries(nfs_core PRIVATE ${SDL2_MAIN_TARGET} ${SDL2_LIB_TARGET} ${NFS_GL_LIBRARY})
 
 # helper function for adding the game executables
 function(add_game_exe name)
@@ -131,13 +169,18 @@ function(add_game_exe name)
 
     # adding the headers to the executable source list is what makes CMake
     # aware that the custom command must run before compilation starts.
-    add_executable(${name} ${GAME_SOURCES} ${DISASM_SOURCES} ${DISASM_HEADERS})
+    if(ANDROID)
+        add_library(${name} SHARED ${GAME_SOURCES} ${DISASM_SOURCES} ${DISASM_HEADERS})
+        target_link_options(${name} PRIVATE "-Wl,-z,max-page-size=16384")
+    else()
+        add_executable(${name} ${GAME_SOURCES} ${DISASM_SOURCES} ${DISASM_HEADERS})
+    endif()
     set_source_files_properties(${DISASM_HEADERS} PROPERTIES HEADER_FILE_ONLY TRUE)
     target_include_directories(${name} PRIVATE
         ${game_src_dir}
         ${CMAKE_SOURCE_DIR}/src/${name}/disassembly
         ${CMAKE_SOURCE_DIR}/include)
-    target_link_libraries(${name} PRIVATE ${SDL3_MAIN_TARGET} nfs_core ${SDL3_LIB_TARGET} OpenGL::GL)
+    target_link_libraries(${name} PRIVATE ${SDL2_MAIN_TARGET} nfs_core ${SDL2_LIB_TARGET} ${NFS_GL_LIBRARY})
     if(WITH_PEDANTIC_FPU)
         target_compile_definitions(${name} PRIVATE WITH_PEDANTIC_FPU)
     endif()
@@ -146,5 +189,9 @@ function(add_game_exe name)
     endif()
 endfunction()
 
-add_game_exe(nfs2se)
-add_game_exe(nfs3hp)
+if(BUILD_NFS2)
+    add_game_exe(nfs2se)
+endif()
+if(BUILD_NFS3)
+    add_game_exe(nfs3hp)
+endif()

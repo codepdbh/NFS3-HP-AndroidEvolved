@@ -1,6 +1,6 @@
 #include <lib/mutex.h>
 #include <lib/thread.h>
-#include <SDL3/SDL.h>
+#include <SDL_mutex.h>
 
 namespace win32
 {

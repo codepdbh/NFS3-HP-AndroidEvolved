@@ -141,8 +141,10 @@ HRESULT IDirectSound::SetCooperativeLevel(WinApplication* app, x86::CPU& cpu,
     NFS2_USE(cpu);
     NFS2_USE(hwnd);
     NFS2_USE(dwLevel);
-    m_resource = new AudioDevice();
-    app->allocateResource(m_resource);
+    if(!m_resource) {
+        m_resource = new AudioDevice();
+        app->allocateResource(m_resource);
+    }
     return 0;
 }
 

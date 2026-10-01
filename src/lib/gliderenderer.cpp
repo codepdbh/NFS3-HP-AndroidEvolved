@@ -1,12 +1,15 @@
 #include <lib/gliderenderer.h>
 #include <lib/renderer.h>
 #include <lib/glidetmu.h>
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_opengl.h>
+#include <SDL_render.h>
+#include <SDL_video.h>
+#include <SDL_log.h>
+#include <lib/gl_api.h>
 
 namespace win32
 {
 
+#ifndef __ANDROID__
 static PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate;
 static PFNGLATTACHSHADERPROC glAttachShader;
 static PFNGLCOMPILESHADERPROC glCompileShader;
@@ -43,8 +46,10 @@ static PFNGLBINDRENDERBUFFERPROC glBindRenderbuffer;
 static PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage;
 static PFNGLDRAWBUFFERSPROC glDrawBuffers;
 
+#endif
+
 static const char g_glVertexShader[] = ""
-"#version 400\n"
+NFS_SHADER_VERSION
 "in vec3 g_position;"
 "in vec4 g_color;"
 "in vec2 g_texCoord;"
@@ -65,7 +70,7 @@ static const char g_glVertexShader[] = ""
 "}";
 
 static const char g_glFragmentShader[] =
-"#version 400\n"
+NFS_SHADER_VERSION
 "in vec3 v_texCoord;"
 "in vec4 v_color;"
 "flat in vec4 v_combine;"
@@ -75,8 +80,8 @@ static const char g_glFragmentShader[] =
 ""
 "vec4 getColor(vec2 coords)"
 "{"
-"    vec2 texCoords = (v_atlasInfo.pq + clamp(coords, 0, v_atlasInfo.t-1))/v_atlasInfo.s;"
-"    return texture2D(u_texture, texCoords);"
+"    vec2 texCoords = (v_atlasInfo.pq + clamp(coords, 0.0, v_atlasInfo.t-1.0))/v_atlasInfo.s;"
+"    return texture(u_texture, texCoords);"
 "}"
 "void main()"
 "{"
@@ -85,10 +90,10 @@ static const char g_glFragmentShader[] =
 "    vec2 tex2mod = mod(vec2(texelPos.x+0.25, texelPos.y-0.25), v_atlasInfo.t);"
 "    vec2 tex3mod = mod(vec2(texelPos.x-0.25, texelPos.y+0.25), v_atlasInfo.t);"
 "    vec2 tex4mod = mod(vec2(texelPos.x+0.25, texelPos.y+0.25), v_atlasInfo.t);"
-"    vec2 tex1clamp = clamp(vec2(texelPos.x-0.25, texelPos.y-0.25), 0, v_atlasInfo.t);"
-"    vec2 tex2clamp = clamp(vec2(texelPos.x+0.25, texelPos.y-0.25), 0, v_atlasInfo.t);"
-"    vec2 tex3clamp = clamp(vec2(texelPos.x-0.25, texelPos.y+0.25), 0, v_atlasInfo.t);"
-"    vec2 tex4clamp = clamp(vec2(texelPos.x+0.25, texelPos.y+0.25), 0, v_atlasInfo.t);"
+"    vec2 tex1clamp = clamp(vec2(texelPos.x-0.25, texelPos.y-0.25), 0.0, v_atlasInfo.t);"
+"    vec2 tex2clamp = clamp(vec2(texelPos.x+0.25, texelPos.y-0.25), 0.0, v_atlasInfo.t);"
+"    vec2 tex3clamp = clamp(vec2(texelPos.x-0.25, texelPos.y+0.25), 0.0, v_atlasInfo.t);"
+"    vec2 tex4clamp = clamp(vec2(texelPos.x+0.25, texelPos.y+0.25), 0.0, v_atlasInfo.t);"
 "    vec2 tex1 = mix(tex1clamp, tex1mod, v_combine.p);"
 "    vec2 tex2 = mix(tex2clamp, tex2mod, v_combine.p);"
 "    vec2 tex3 = mix(tex3clamp, tex3mod, v_combine.p);"
@@ -125,6 +130,7 @@ GlideRenderer::GlideRenderer(Renderer* renderer)
     m_tmus[0] = new GlideTMU(s_atlasSize);
     //m_tmus[1] = new GlideTMU(s_atlasSize);
     m_renderer->setCurrent();
+#ifndef __ANDROID__
     glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC)SDL_GL_GetProcAddress("glBlendFuncSeparate");
     NFS2_ASSERT(glBlendFuncSeparate);
     glAttachShader = (PFNGLATTACHSHADERPROC)SDL_GL_GetProcAddress("glAttachShader");
@@ -196,6 +202,7 @@ GlideRenderer::GlideRenderer(Renderer* renderer)
     glDrawBuffers = (PFNGLDRAWBUFFERSPROC)SDL_GL_GetProcAddress("glDrawBuffers");
     NFS2_ASSERT(glDrawBuffers);
 
+#endif
     compileShaders();
     glGenTextures(1, &m_atlas);
     glBindTexture(GL_TEXTURE_2D, m_atlas);
@@ -223,6 +230,9 @@ GlideRenderer::GlideRenderer(Renderer* renderer)
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthBuffer);
     GLenum drawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
     glDrawBuffers(1, drawBuffers);
+    GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    SDL_Log("[NFS3][GLIDE] Framebuffer %ux%u status=0x%x", m_renderer->m_width, m_renderer->m_height, framebufferStatus);
+    NFS2_ASSERT(framebufferStatus == GL_FRAMEBUFFER_COMPLETE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     m_renderer->clearCurrent();
@@ -258,10 +268,11 @@ void GlideRenderer::compileShaders()
         {
             GLchar *log = (GLchar *)malloc(maxLen);
             glGetShaderInfoLog(vertexShader, maxLen, &len, log);
-            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "%s", log);
+            SDL_Log("%s", log);
             free(log);
         }
     }
+    NFS2_ASSERT(status);
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fragmentShaderSrc, &fragmentShaderLen);
     glCompileShader(fragmentShader);
@@ -276,11 +287,12 @@ void GlideRenderer::compileShaders()
         {
             GLchar *log = (GLchar *)malloc(maxLen);
             glGetShaderInfoLog(fragmentShader, maxLen, &len, log);
-            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "%s", log);
+            SDL_Log("%s", log);
             free(log);
         }
     }
 
+    NFS2_ASSERT(status);
     m_shaderProgram = glCreateProgram();
     glAttachShader(m_shaderProgram, vertexShader);
     glAttachShader(m_shaderProgram, fragmentShader);
@@ -296,10 +308,13 @@ void GlideRenderer::compileShaders()
         {
             GLchar *log = (GLchar *)malloc(maxLen);
             glGetProgramInfoLog(m_shaderProgram, maxLen, &len, log);
-            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "%s", log);
+            SDL_Log("%s", log);
             free(log);
         }
     }
+    NFS2_ASSERT(status);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
     m_attributes[0] = glGetAttribLocation(m_shaderProgram, "g_position");
     m_attributes[1] = glGetAttribLocation(m_shaderProgram, "g_color");
     m_attributes[2] = glGetAttribLocation(m_shaderProgram, "g_texCoord");
@@ -316,7 +331,11 @@ void GlideRenderer::clear(x86::reg32 color)
     glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_renderer->m_texture, 0);
     glClearColor(float(color >> 16 & 0xff)/255.0f, float(color >> 8 & 0xff)/255.0f, float(color >> 0 & 0xff)/255.0f, 0.0f);
+#ifdef __ANDROID__
+    glClearDepthf(1.0f);
+#else
     glClearDepth(1.0);
+#endif
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     m_renderer->clearCurrent();
@@ -340,22 +359,24 @@ void GlideRenderer::flush()
 void GlideRenderer::swap()
 {
     m_renderer->setCurrent();
+    glEnable(GL_BLEND);
     glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_renderer->m_texture, 0);
-    const SDL_DisplayMode* mode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
-    SDL_GL_SetSwapInterval(mode ? (int)(mode->refresh_rate / 60) : 1);
+    SDL_DisplayMode mode;
+    SDL_GetCurrentDisplayMode(0, &mode);
+    SDL_GL_SetSwapInterval(mode.refresh_rate / 60);
     if (m_vertexCount)
     {
         flush();
         glViewport(0, 0, m_renderer->m_width, m_renderer->m_height);
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrtho(0, m_renderer->m_width, 0, m_renderer->m_height, 0, -65536.0f);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
         glUseProgram(m_shaderProgram);
-        float matrix[16];
-        glGetFloatv(GL_PROJECTION_MATRIX, matrix);
+        const float matrix[16] = {
+            2.0f/m_renderer->m_width,0,0,0,
+            0,2.0f/m_renderer->m_height,0,0,
+            0,0,2.0f/65536.0f,0,
+            -1,-1,-1,1
+        };
+        glBindVertexArray(m_vertexArray);
         glUniformMatrix4fv(m_transform, 1, GL_FALSE, matrix);
         glBindTexture(GL_TEXTURE_2D, m_atlas);
         glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer);
@@ -397,6 +418,8 @@ void GlideRenderer::swap()
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glUseProgram(0);
+    const GLenum error = glGetError();
+    if (error != GL_NO_ERROR) SDL_LogError(SDL_LOG_CATEGORY_RENDER, "[NFS3][GLIDE] Draw error 0x%x", error);
     glFlush();
     glBindTexture(GL_TEXTURE_2D, m_renderer->m_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -527,7 +550,17 @@ void GlideRenderer::setTextureData(x86::reg32 tmu, x86::reg32 address, const voi
                 NFS2_ASSERT(false);
             }
         }
+#ifdef __ANDROID__
+        std::vector<uint8_t> rgba(largeMipmapSize*largeMipmapSize*4);
+        for (size_t i=0; i<rgba.size()/4; ++i) {
+            const uint32_t c=textureData[i];
+            rgba[i*4]=uint8_t(c>>24); rgba[i*4+1]=uint8_t(c>>16);
+            rgba[i*4+2]=uint8_t(c>>8); rgba[i*4+3]=uint8_t(c);
+        }
+        glTexSubImage2D(GL_TEXTURE_2D,lod,x,y,largeMipmapSize,largeMipmapSize,GL_RGBA,GL_UNSIGNED_BYTE,rgba.data());
+#else
         glTexSubImage2D(GL_TEXTURE_2D, lod, x, y, largeMipmapSize, largeMipmapSize, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, textureData);
+#endif
         data = pixelData + largeMipmapSize * largeMipmapSize;
         break;
     }

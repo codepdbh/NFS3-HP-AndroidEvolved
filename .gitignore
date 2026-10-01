@@ -15,3 +15,6 @@ nfs3hp/fedata/
 nfs3hp/gamedata/
 .vscode
 **/*.pyc
+
+nfs2se/*.exe
+nfs2se/*.dll

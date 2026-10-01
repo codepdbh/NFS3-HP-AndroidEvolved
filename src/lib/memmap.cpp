@@ -1,5 +1,5 @@
 #include <lib/memmap.h>
-#include <SDL3/SDL.h>
+#include <SDL_mutex.h>
 #include <vector>
 #ifdef _WIN32
 # include <windows.h>
@@ -29,7 +29,15 @@ static void* alloc(x86::reg32 size)
 #ifdef _WIN32
     return VirtualAlloc(0, size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 #else
-    void* p = mmap(nullptr, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+    // Guest allocations are 4 KB, while Android host pages may be 16 KB.
+    // Keep the arena writable on Android: protecting one guest block would
+    // otherwise also revoke access to neighbouring live allocations.
+#ifdef __ANDROID__
+    const int protection = PROT_READ | PROT_WRITE;
+#else
+    const int protection = PROT_NONE;
+#endif
+    void* p = mmap(nullptr, size, protection, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     NFS2_ASSERT(p != MAP_FAILED);
     return p;
 #endif
@@ -47,7 +55,7 @@ static void dealloc(void* mem, x86::reg32 size)
 
 static void protect(void* mem, x86::reg32 size, bool read, bool write)
 {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__ANDROID__)
     NFS2_USE(mem);
     NFS2_USE(size);
     NFS2_USE(read);
@@ -73,7 +81,8 @@ MemMap::MemMap(x86::reg32 size)
     m_blockCount = ((size+4095) & ~4095u) / 4096;
     NFS2_ASSERT(m_blockCount >= 1);
     s_lock->lock();
-    for (x86::reg32 b = 0; b < s_blockCount - m_blockCount; /* nothing */)
+    NFS2_ASSERT(m_blockCount <= s_blockCount);
+    for (x86::reg32 b = 0; b <= s_blockCount - m_blockCount; /* nothing */)
     {
         bool success = true;
         for (x86::reg32 s = b; s < b + m_blockCount; ++s)
@@ -91,6 +100,7 @@ MemMap::MemMap(x86::reg32 size)
             break;
         }
     }
+    NFS2_ASSERT(m_block != x86::reg32(-1));
     for (x86::reg32 s = m_block; s < m_block + m_blockCount; ++s)
     {
         s_blocks[s] = 1;
@@ -171,6 +181,7 @@ x86::reg8* MemMap::init(x86::reg32 baseAddress, const std::vector<Section>& sect
 
 void MemMap::fini()
 {
+    const x86::reg32 allocationSize = s_simulatedMemory + s_blockSize + s_sectionSize;
     std::vector<MemMap*> memMapsCopy(s_memMaps);
     for (std::vector<MemMap*>::iterator it = memMapsCopy.begin(); it != memMapsCopy.end(); ++it)
     {
@@ -183,7 +194,8 @@ void MemMap::fini()
     s_addressOffset = 0;
     delete s_lock;
     s_lock = nullptr;
-    dealloc(s_memory, s_simulatedMemory + s_blockSize + s_sectionSize);
+    dealloc(s_memory, allocationSize);
+    s_memory = nullptr;
 }
 
 void MemMap::fillDebugGraph(x86::reg16* graph)

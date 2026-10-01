@@ -2,7 +2,7 @@
 #define LIB_AUDIO_H_
 #include <lib/winapp.h>
 #include <lib/memmap.h>
-#include <SDL3/SDL.h>
+#include <SDL_audio.h>
 
 
 namespace win32
@@ -12,20 +12,23 @@ class AudioBuffer;
 
 class AudioDevice : public GenericResource
 {
+    friend class AudioBuffer;
 public:
     AudioDevice();
     ~AudioDevice();
 
     void play(AudioBuffer* buffer);
     void stop(AudioBuffer* buffer);
-    SDL_AudioStream* stream() const { return m_stream; }
 
 private:
-    static void audioCallback22050(void *userdata, SDL_AudioStream *stream, int additional_amount, int total_amount);
+    static void audioCallback22050(void *userdata, x86::reg8* stream, int len);
+    static void audioCallback44100(void *userdata, x86::reg8* stream, int len);
 
 private:
-    SDL_AudioStream*            m_stream;
+    SDL_AudioDeviceID           m_id;
     std::vector<AudioBuffer*>   m_playingBuffers;
+    static SDL_AudioDeviceID s_sharedId;
+    static std::vector<AudioDevice*> s_devices;
 };
 
 class AudioBuffer : public GenericResource

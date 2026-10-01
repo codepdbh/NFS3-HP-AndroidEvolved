@@ -3,15 +3,11 @@
 
 #include <lib/winapp.h>
 #include <winapi/types.h>
-#include <SDL3/SDL.h>
+
+struct SDL_Window;
 
 namespace win32
 {
-
-extern Uint32 g_userEvent;
-extern Uint32 g_userEvent1;
-extern Uint32 g_userEvent2;
-extern Uint32 g_wmCharEvent;
 
 class WindowClass : public GenericResource
 {
@@ -34,6 +30,8 @@ public:
     static x86::reg32 getMessage(const x86::CPU& cpu, MSG* result, Window* window, x86::reg32 filterMin, x86::reg32 msgMax);
     static x86::reg32 postMessage(x86::reg32 hWnd, x86::reg32 message, x86::reg32 wParam, x86::reg32 lParam);
     static x86::reg32 getMessageHandler();
+    static void setRenderSize(int width, int height);
+    static bool setCursorPosition(int x, int y);
 
 private:
     SDL_Window*     m_window;

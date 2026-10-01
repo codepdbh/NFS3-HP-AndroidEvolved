@@ -11,7 +11,7 @@
 #include <lib/thread.h>
 #include <cstring>
 #include <vector>
-#include <SDL3/SDL.h>
+#include <SDL_log.h>
 
 namespace win32 { namespace kernel32
 {
@@ -370,6 +370,7 @@ BOOL GetCommState(WinApplication* app, x86::CPU& cpu,
 x86::reg32 GetCommandLineA(WinApplication* app, x86::CPU& cpu)
 {
     NFS2_USE(cpu);
+    SDL_Log("%s", app->getAppNameRaw());
     return app->getAppName();
 }
 
@@ -834,7 +835,7 @@ HMODULE LoadLibraryA(WinApplication* app, x86::CPU& cpu,
                      LPCSTR lpLibFileName)
 {
     NFS2_USE(cpu);
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Loading library %s", lpLibFileName);
+    SDL_Log("Loading library %s", lpLibFileName);
     win32::LibraryHandle* lib = new win32::LibraryHandle(lpLibFileName);
     if (*lib)
     {
@@ -909,6 +910,7 @@ void OutputDebugStringA(WinApplication* app, x86::CPU& cpu,
     NFS2_USE(app);
     NFS2_USE(cpu);
     SDL_Log("%s", lpOutputString);
+    NFS2_ASSERT(false);
 }
 
 BOOL PeekConsoleInputA(WinApplication* app, x86::CPU& cpu,

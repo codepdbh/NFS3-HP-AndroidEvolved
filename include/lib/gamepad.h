@@ -2,7 +2,8 @@
 #define LIB_GAMEPAD_H_
 
 #include <lib/winapp.h>
-#include <SDL3/SDL.h>
+#include <SDL_joystick.h>
+#include <SDL_gamecontroller.h>
 
 
 namespace win32
@@ -53,6 +54,7 @@ public:
     static void updateKeys();
 private:
     SDL_Joystick* m_joystick;
+    SDL_GameController* m_controller;
 };
 
 }

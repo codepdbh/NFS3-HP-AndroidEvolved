@@ -1,3 +1,12 @@
+# NFS3 HP Android Evolved
+
+Native ARM64 Android community port of Need for Speed III: Hot Pursuit.
+Original game data is required and is not distributed. Only nfs3hp is built.
+
+See [ANDROID.md](ANDROID.md) for builds, installation, shared-storage paths,
+touch controls and verified milestones. Based on motor-dev/nfs-recompiled
+77ebdb3; original upstream documentation follows.
+
 **DISCLAIMER**
 
 Readme and CMakeLists mostly AI-generated.

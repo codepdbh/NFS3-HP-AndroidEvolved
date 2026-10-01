@@ -5,6 +5,15 @@
 #include <winapi/types.h>
 #include <lib/winapp.h>
 
+// Bionic exposes these host helpers as function-like macros. The guest Win32
+// functions have different signatures and are dispatched through this namespace.
+#ifdef htons
+#undef htons
+#endif
+#ifdef ntohs
+#undef ntohs
+#endif
+
 
 namespace win32 { namespace wsock32
 {

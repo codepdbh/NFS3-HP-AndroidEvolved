@@ -1,5 +1,6 @@
 #include <lib/timer.h>
 #include <time.h>
+#include <SDL_log.h>
 #ifdef _WIN32
 # define localtime_r(a,b)  localtime_s(b,a)
 #endif
@@ -25,7 +26,7 @@ void getSystemTime(SYSTEMTIME* systemTime)
 
 x86::reg32 timeGetTickCount()
 {
-    x86::reg32 result = (x86::reg32)SDL_GetTicks();
+    x86::reg32 result = SDL_GetTicks();
     return result;
 }
 
@@ -48,7 +49,7 @@ void Timer::cancel()
     SDL_RemoveTimer(m_id);
 }
 
-Uint32 Timer::timerCallback(void* data, SDL_TimerID /*timerID*/, Uint32 interval)
+Uint32 Timer::timerCallback(Uint32 interval, void* data)
 {
     NFS2_USE(interval);
     Timer* t = (Timer*)data;

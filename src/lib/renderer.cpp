@@ -1,8 +1,8 @@
 #include <lib/renderer.h>
 #include <lib/window.h>
 #include <lib/gamepad.h>
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_opengl.h>
+#include <SDL.h>
+#include <SDL_opengl.h>
 #include <GL/gl.h>
 
 namespace win32
@@ -44,7 +44,7 @@ Renderer::Renderer(WinApplication* application, Window *window)
 
 Renderer::~Renderer()
 {
-    SDL_GL_DestroyContext(static_cast<SDL_GLContext>(m_renderer));
+    SDL_GL_DeleteContext(static_cast<SDL_GLContext>(m_renderer));
 }
 
 void Renderer::setCurrent()
@@ -59,6 +59,7 @@ void Renderer::clearCurrent()
 
 void Renderer::setVideoMode(x86::reg32 w, x86::reg32 h, x86::reg32 bpp)
 {
+    Window::setRenderSize(w,h);
     m_width = w;
     m_height = h;
     m_depth = bpp;
@@ -90,7 +91,7 @@ void Renderer::present()
     Gamepad::updateKeys();
     glBindTexture(GL_TEXTURE_2D, m_texture);
     int w, h;
-    SDL_GetWindowSizeInPixels(m_window->m_window, &w, &h);
+    SDL_GL_GetDrawableSize(m_window->m_window, &w, &h);
 
     float gameAspect = float(m_width) / float(m_height);
     float windowAspect = float(w) / float(h);
@@ -185,7 +186,8 @@ void Renderer::unlock(x86::reg32 index)
 void Renderer::swap()
 {
     setCurrent();
-    const SDL_DisplayMode* mode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
+    SDL_DisplayMode displayMode{};
+    const SDL_DisplayMode* mode = SDL_GetCurrentDisplayMode(0, &displayMode) == 0 ? &displayMode : nullptr;
     SDL_GL_SetSwapInterval(1);
     m_currentBuffer = 1 - m_currentBuffer;
     for (int i = 0; i < (mode ? (int)(mode->refresh_rate / 30) : 2); ++i)

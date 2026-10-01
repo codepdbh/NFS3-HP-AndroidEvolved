@@ -4,7 +4,7 @@
 #include <lib/library.h>
 #include <lib/registry.h>
 #include <winapi/types.h>
-#include <SDL3/SDL.h>
+#include <SDL.h>
 #include <x86.h>
 
 #include <winapi/dsetup.h>
@@ -16,18 +16,18 @@ namespace win32
 {
 
 static x86::reg32 s_resourceIndex;
-static SDL_AtomicInt s_resourceCount;
+static SDL_atomic_t s_resourceCount;
 
 GenericResource::GenericResource()
     :   m_resourceIndex(0)
 {
-    SDL_AddAtomicInt(&s_resourceCount, 1);
+    SDL_AtomicAdd(&s_resourceCount, 1);
 }
 
 GenericResource::~GenericResource()
 {
     NFS2_ASSERT(m_resourceIndex == 0);
-    SDL_AddAtomicInt(&s_resourceCount, -1);
+    SDL_AtomicAdd(&s_resourceCount, -1);
 }
 
 void GenericResource::setResourceIndex(x86::reg32 resourceIndex)
@@ -95,7 +95,7 @@ WinApplication::~WinApplication()
     delete m_resourceContext;
     delete m_executionContext;
     /*delete[] m_methods;*/
-    NFS2_ASSERT(SDL_GetAtomicInt(&s_resourceCount) == 0);
+    NFS2_ASSERT(SDL_AtomicGet(&s_resourceCount) == 0);
 }
 
 void WinApplication::addRegistryKey(x86::reg32 root, const char* keyname, const char* valuename, RegistryValue* value)

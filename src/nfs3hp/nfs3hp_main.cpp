@@ -1,8 +1,12 @@
-#include <SDL3/SDL_main.h>
+#include <SDL.h>
 #include <lib/file.h>
 #include <lib/registry.h>
 #include <nfs3hp.h>
 #include <string>
+#ifdef __ANDROID__
+#include <SDL_system.h>
+#include <sys/stat.h>
+#endif
 
 static std::string getExeDirectory(const char* argv0)
 {
@@ -29,11 +33,34 @@ int main(int argc, char* argv[])
     }
     else
     {
+#ifdef __ANDROID__
+        const char* external = SDL_AndroidGetExternalStoragePath();
+        if (!external) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[NFS3][FILESYSTEM] External files directory unavailable");
+            return 1;
+        }
+        std::string exeDir = std::string(external) + "/NFS3/";
+        mkdir(exeDir.c_str(), 0700);
+        SDL_Log("[NFS3][FILESYSTEM] Game data: %s", exeDir.c_str());
+#else
         std::string exeDir = getExeDirectory(argv[0]);
+#endif
         win32::File::setDataDirectory(exeDir.c_str());
         win32::File::setCdDirectory(exeDir.c_str());
     }
-    SDL_Init(SDL_INIT_EVENTS|SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_JOYSTICK);
+    if (SDL_Init(SDL_INIT_EVENTS|SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_JOYSTICK|SDL_INIT_GAMECONTROLLER) != 0) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[NFS3][BOOT] SDL initialization: %s", SDL_GetError());
+        return 1;
+    }
+#ifdef __ANDROID__
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+#endif
+    SDL_Log("[NFS3][BOOT] Starting native runtime");
     {
         nfs3hp::Application app("nfs3.exe");
         app.addRegistryKey(win32::HKEY_LOCAL_MACHINE, "SOFTWARE\\Electronic Arts\\Need For Speed III", "3D Device Description", new win32::RegistryValue("3Dfx Voodoo 2"));
