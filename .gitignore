@@ -1,0 +1,17 @@
+build
+build-*/
+vendor/
+android/.gradle/
+android/.cxx/
+android/app/.cxx/
+android/app/build/
+android/local.properties
+*.log
+*.apk
+# Original game binaries and assets must never be redistributed.
+nfs3hp/*.exe
+nfs3hp/*.dll
+nfs3hp/fedata/
+nfs3hp/gamedata/
+.vscode
+**/*.pyc
