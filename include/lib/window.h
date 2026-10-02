@@ -37,6 +37,13 @@ public:
     static void setWideRenderAllowed(bool allowed);
     static const int MAX_RENDER_WIDTH = 3840, MAX_RENDER_HEIGHT = 2160;
     static void widenRenderSize(int& width, int& height);
+    /** Size the GPU draws a Glide frame at (supersampling to the chosen height). */
+    static void outputSize(int& width, int& height);
+    static void setOutputHeight(int height);
+    static void setFpsLimit(int fps);
+    /** Waits to honour the FPS limit and measures the frame rate; call before a swap. */
+    static void paceFrame();
+    static int measuredFps();
     static void getViewport(int width, int height, float& left, float& top, float& scaleX, float& scaleY);
     static bool setCursorPosition(int x, int y);
 

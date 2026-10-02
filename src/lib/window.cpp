@@ -6,6 +6,7 @@
 #include <SDL_events.h>
 #include <SDL_render.h>
 #include <SDL_log.h>
+#include <SDL_timer.h>
 #include <cstring>
 #include <algorithm>
 
@@ -42,19 +43,70 @@ void Window::setWideRenderAllowed(bool allowed) { s_wideRenderAllowed = allowed;
 /**
  * The Modern Patch adapts field of view and HUD to whatever grSstScreenWidth and
  * grSstScreenHeight report, as it does with nGlide's desktop resolution. Race
- * modes are rendered at the display's own resolution (or its height at 16:9);
- * 640x480 is left alone because the front end is laid out for it.
+ * modes are widened to the display aspect (Full) or 16:9; 640x480 is left alone
+ * because the front end is laid out for it. outputSize() then scales the result.
  */
 void Window::widenRenderSize(int& width, int& height) {
     if(!s_wideRenderAllowed || (width==640 && height==480)) return;
-    const float aspect=s_displayAspect.load();
-    if(aspect<0) return;  // original 4:3 picture
-    SDL_DisplayMode mode;
-    if(SDL_GetDesktopDisplayMode(0,&mode)!=0 || mode.w<=0 || mode.h<=0) return;
-    const int screenWidth=std::max(mode.w,mode.h), screenHeight=std::min(mode.w,mode.h);
-    height=std::min(screenHeight, MAX_RENDER_HEIGHT);
-    width=aspect==0 ? screenWidth*height/screenHeight : int(height*aspect+0.5f);
-    width=std::min(width & ~1, MAX_RENDER_WIDTH);
+    float target=s_displayAspect.load();
+    if(target<0) return;  // original 4:3 picture
+    if(target==0) {
+        SDL_DisplayMode mode;
+        if(SDL_GetDesktopDisplayMode(0,&mode)!=0 || mode.w<=0 || mode.h<=0) return;
+        target=float(std::max(mode.w,mode.h))/float(std::min(mode.w,mode.h));
+    }
+    if(target<=float(width)/float(height)+0.01f) return;
+    width=std::min(int(height*target+0.5f) & ~7, MAX_RENDER_WIDTH);
+}
+
+// Output height for supersampling: 0 = the display's height, -1 = game resolution.
+static std::atomic<int> s_outputHeight{0};
+static std::atomic<int> s_fpsLimit{60};
+static std::atomic<int> s_measuredFps{0};
+
+void Window::setOutputHeight(int height) { s_outputHeight.store(height); }
+void Window::setFpsLimit(int fps) { s_fpsLimit.store(fps); }
+int Window::measuredFps() { return s_measuredFps.load(); }
+
+void Window::outputSize(int& width, int& height) {
+    int target=s_outputHeight.load();
+    if(target<0 || height<=0) return;
+    if(target==0) {
+        SDL_DisplayMode mode;
+        if(SDL_GetDesktopDisplayMode(0,&mode)!=0 || mode.w<=0 || mode.h<=0) return;
+        target=std::min(mode.w,mode.h);
+    }
+    target=std::min(target, MAX_RENDER_HEIGHT);
+    if(target<=height) return;  // never draw below the game's own resolution
+    width=std::min(int(int64_t(width)*target/height) & ~1, MAX_RENDER_WIDTH);
+    height=target;
+}
+
+void Window::paceFrame() {
+    static Uint64 next=0, windowStart=0;
+    static int frames=0;
+    const Uint64 frequency=SDL_GetPerformanceFrequency();
+    const int limit=s_fpsLimit.load();
+    if(limit>0) {
+        const Uint64 period=frequency/Uint64(limit);
+        Uint64 now=SDL_GetPerformanceCounter();
+        if(next>now) {
+            // Sleep most of the wait, then spin the last millisecond for accuracy.
+            const Uint64 wait=next-now;
+            if(wait*1000/frequency>1) SDL_Delay(Uint32(wait*1000/frequency-1));
+            while(SDL_GetPerformanceCounter()<next) {}
+            now=next;
+        }
+        next=(next+period>now && next!=0) ? next+period : now+period;
+    }
+    const Uint64 now=SDL_GetPerformanceCounter();
+    if(!windowStart) windowStart=now;
+    ++frames;
+    if(now-windowStart>=frequency) {
+        s_measuredFps.store(int(frames*frequency/(now-windowStart)));
+        frames=0;
+        windowStart=now;
+    }
 }
 
 void Window::getViewport(int width, int height, float& left, float& top, float& scaleX, float& scaleY) {
@@ -570,6 +622,24 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_nfsrecompiled_nfs3hp_NFS3Activity_nativeSetDisplayAspect(JNIEnv*, jclass, jfloat aspect)
 {
     win32::Window::setDisplayAspect(aspect);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_nfsrecompiled_nfs3hp_NFS3Activity_nativeSetOutputHeight(JNIEnv*, jclass, jint height)
+{
+    win32::Window::setOutputHeight(height);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_nfsrecompiled_nfs3hp_NFS3Activity_nativeSetFpsLimit(JNIEnv*, jclass, jint fps)
+{
+    win32::Window::setFpsLimit(fps);
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_nfsrecompiled_nfs3hp_NFS3Activity_nativeGetFps(JNIEnv*, jclass)
+{
+    return win32::Window::measuredFps();
 }
 
 /** Width of the game's current video mode; the front end always runs at 640x480. */

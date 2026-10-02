@@ -166,6 +166,15 @@ final class TouchControlsView extends View implements SensorEventListener {
 
     boolean isGamepadMode() { return gamepadMode; }
 
+    private int fps = -1;
+
+    /** Frames per second to show in a corner, or -1 to hide the counter. */
+    void setFps(int value) {
+        if (value == fps) return;
+        fps = value;
+        invalidate();
+    }
+
     boolean isEditing() { return editing; }
 
     /** Lets the player drag and resize controls; {@code done} runs when they tap LISTO. */
@@ -559,6 +568,11 @@ final class TouchControlsView extends View implements SensorEventListener {
                 && !(gamepadMode && settings.hideWithGamepad) && !editing)
             drawTiltMeter(canvas, opacity);
         if (editing) drawEditor(canvas);
+        if (fps >= 0) {
+            text.setTextSize(dp(13));
+            text.setColor(fps >= 55 ? 0xFF34C759 : fps >= 28 ? 0xFFFFD60A : 0xFFFF453A);
+            canvas.drawText(fps + " FPS", getWidth() / 2f, dp(16), text);
+        }
     }
 
     /** Frosted glass circle with a thin ring; pressed controls light up in their accent colour. */

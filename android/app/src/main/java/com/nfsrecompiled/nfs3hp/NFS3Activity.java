@@ -27,6 +27,9 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
     private static native int nativeGetFrameTriangles();
     private static native int nativeGetRenderWidth();
     private static native int nativeGetGameState();
+    private static native void nativeSetOutputHeight(int height);
+    private static native void nativeSetFpsLimit(int fps);
+    private static native int nativeGetFps();
 
     private static final long RACE_AFTER_MS = 600, MENU_AFTER_MS = 1200, POLL_MS = 200;
 
@@ -65,6 +68,8 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
         if (mLayout == null) return;
         settings = new ControlSettings(this);
         nativeSetDisplayAspect(settings.displayAspect());
+        nativeSetOutputHeight(settings.outputHeight);
+        nativeSetFpsLimit(settings.fpsLimit);
         controls = new TouchControlsView(this, settings, input, this::showSettings);
         mLayout.addView(controls, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         inputManager = (InputManager) getSystemService(INPUT_SERVICE);
@@ -72,19 +77,29 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
             // Ask for a steady 60 Hz: variable-refresh panels otherwise drop the
             // rate when the screen isn't touched, halving the game's frame rate.
             mSurface.getHolder().addCallback(new android.view.SurfaceHolder.Callback() {
-                @Override public void surfaceCreated(android.view.SurfaceHolder holder) { pinFrameRate(holder); }
-                @Override public void surfaceChanged(android.view.SurfaceHolder holder, int f, int w, int h) { pinFrameRate(holder); }
+                @Override public void surfaceCreated(android.view.SurfaceHolder holder) { pinFrameRate(holder, surfaceRate()); }
+                @Override public void surfaceChanged(android.view.SurfaceHolder holder, int f, int w, int h) { pinFrameRate(holder, surfaceRate()); }
                 @Override public void surfaceDestroyed(android.view.SurfaceHolder holder) {}
             });
-            pinFrameRate(mSurface.getHolder());
+            pinFrameRate(mSurface.getHolder(), surfaceRate());
         }
     }
 
-    private static void pinFrameRate(android.view.SurfaceHolder holder) {
+    /** Panel rate for the FPS limit: 30 FPS runs on a 60 Hz panel, Max on the fastest mode. */
+    private float surfaceRate() {
+        int limit = settings.fpsLimit;
+        if (limit > 0) return Math.max(60, limit);
+        float best = 60f;
+        for (android.view.Display.Mode mode : getWindowManager().getDefaultDisplay().getSupportedModes())
+            best = Math.max(best, mode.getRefreshRate());
+        return best;
+    }
+
+    private static void pinFrameRate(android.view.SurfaceHolder holder, float rate) {
         android.view.Surface surface = holder.getSurface();
         if (surface == null || !surface.isValid() || android.os.Build.VERSION.SDK_INT < 30) return;
         try {
-            surface.setFrameRate(60f, android.view.Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE);
+            surface.setFrameRate(rate, android.view.Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE);
         } catch (RuntimeException ignored) {
         }
     }
@@ -102,6 +117,7 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
     private long lastDiagnostic;
 
     private void updateLayoutMode() {
+        controls.setFps(settings.showFps ? nativeGetFps() : -1);
         long uptime = android.os.SystemClock.uptimeMillis();
         if (uptime - lastDiagnostic > 5000) {
             lastDiagnostic = uptime;
@@ -225,6 +241,8 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
             settings.hideWithGamepad = hidePad.isChecked();
             settings.save();
             nativeSetDisplayAspect(settings.displayAspect());
+        nativeSetOutputHeight(settings.outputHeight);
+        nativeSetFpsLimit(settings.fpsLimit);
         };
 
         ScrollView scroll = new ScrollView(this);

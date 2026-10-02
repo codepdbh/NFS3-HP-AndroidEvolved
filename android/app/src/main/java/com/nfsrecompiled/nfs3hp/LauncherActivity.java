@@ -40,6 +40,9 @@ public final class LauncherActivity extends Activity {
     private File data;
     private final List<Button> languageButtons = new ArrayList<>();
     private final List<Button> screenButtons = new ArrayList<>();
+    private final List<Button> resolutionButtons = new ArrayList<>();
+    private final List<Button> fpsButtons = new ArrayList<>();
+    private Button showFpsButton;
 
     private boolean hasAccess() {
         return Build.VERSION.SDK_INT >= 30 ? Environment.isExternalStorageManager()
@@ -126,8 +129,43 @@ public final class LauncherActivity extends Activity {
             button.setOnClickListener(v -> { settings.screen = mode; updateChips(); });
             screenButtons.add(button);
         }
+        heading(panel, "RESOLUCIÓN");
+        resolutionButtons.clear();
+        List<Integer> heights = new ArrayList<>();
+        heights.add(0);  // native
+        for (int h : new int[] { 900, 720, 540 }) if (h < screenHeight()) heights.add(h);
+        heights.add(-1);  // the game's own resolution
+        for (int i = 0; i < heights.size(); ++i) {
+            if (i % 3 == 0) row = row(panel);
+            int height = heights.get(i);
+            Button button = chip(row, "");
+            button.setTag(height);
+            button.setOnClickListener(v -> { settings.outputHeight = height; updateChips(); });
+            resolutionButtons.add(button);
+        }
+
+        heading(panel, "FPS");
+        fpsButtons.clear();
+        List<Integer> rates = new ArrayList<>();
+        rates.add(30);
+        for (int fps : supportedRefreshRates()) if (fps > 30 && !rates.contains(fps)) rates.add(fps);
+        rates.add(0);  // display maximum
+        if (!rates.contains(settings.fpsLimit)) settings.fpsLimit = 60;
+        for (int i = 0; i < rates.size(); ++i) {
+            if (i % 3 == 0) row = row(panel);
+            int fps = rates.get(i);
+            Button button = chip(row, fps == 0 ? "Máx" : fps + " FPS");
+            button.setTag(fps);
+            button.setOnClickListener(v -> { settings.fpsLimit = fps; updateChips(); });
+            fpsButtons.add(button);
+        }
+        row = row(panel);
+        showFpsButton = chip(row, "Mostrar FPS");
+        showFpsButton.setOnClickListener(v -> { settings.showFps = !settings.showFps; updateChips(); });
+
         TextView note = new TextView(this);
-        note.setText("Completa ocupa toda la pantalla estirando la imagen; 16:9 estira menos.");
+        note.setText("La resolución dibuja el juego a más detalle. Para panorámica real, elige "
+            + "además 800×600 o más en Opciones → Gráficos del juego.");
         note.setTextColor(0x99FFFFFF);
         note.setTextSize(12);
         note.setGravity(Gravity.CENTER);
@@ -224,6 +262,45 @@ public final class LauncherActivity extends Activity {
     private void updateChips() {
         for (Button button : languageButtons) style(button, settings.language.equals(button.getTag()));
         for (int i = 0; i < screenButtons.size(); ++i) style(screenButtons.get(i), settings.screen == i);
+        for (Button button : resolutionButtons) {
+            int height = (Integer) button.getTag();
+            button.setText(resolutionLabel(height));
+            style(button, settings.outputHeight == height);
+        }
+        for (Button button : fpsButtons) style(button, settings.fpsLimit == (Integer) button.getTag());
+        if (showFpsButton != null) style(showFpsButton, settings.showFps);
+    }
+
+    /** Pixel size the game is drawn at for an output height, in the chosen screen mode. */
+    private String resolutionLabel(int height) {
+        if (height < 0) return "Juego";
+        int h = height == 0 ? screenHeight() : height;
+        int w;
+        switch (settings.screen) {
+            case ControlSettings.SCREEN_ORIGINAL: w = h * 4 / 3; break;
+            case ControlSettings.SCREEN_WIDE: w = h * 16 / 9; break;
+            default: w = h * screenWidth() / screenHeight(); break;
+        }
+        return (height == 0 ? "Nativa " : "") + (w & ~1) + "×" + h;
+    }
+
+    private android.util.DisplayMetrics realMetrics() {
+        android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+        return metrics;
+    }
+
+    private int screenWidth() { android.util.DisplayMetrics m = realMetrics(); return Math.max(m.widthPixels, m.heightPixels); }
+    private int screenHeight() { android.util.DisplayMetrics m = realMetrics(); return Math.min(m.widthPixels, m.heightPixels); }
+
+    private List<Integer> supportedRefreshRates() {
+        List<Integer> rates = new ArrayList<>();
+        for (android.view.Display.Mode mode : getWindowManager().getDefaultDisplay().getSupportedModes()) {
+            int fps = Math.round(mode.getRefreshRate());
+            if (!rates.contains(fps)) rates.add(fps);
+        }
+        java.util.Collections.sort(rates);
+        return rates;
     }
 
     private void style(Button button, boolean selected) {

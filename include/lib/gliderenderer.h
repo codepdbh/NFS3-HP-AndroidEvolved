@@ -82,6 +82,10 @@ private:
     Renderer*               m_renderer;
     unsigned int            m_depthBuffer;
     unsigned int            m_framebuffer;
+    // Android renders 3D into its own target, scaled to the output resolution.
+    unsigned int            m_colorTarget = 0;
+    int                     m_targetWidth = 0;
+    int                     m_targetHeight = 0;
     GlVertex*               m_vertices;
     x86::reg32              m_vertexCount;
     std::vector<DrawCall>   m_drawCalls;

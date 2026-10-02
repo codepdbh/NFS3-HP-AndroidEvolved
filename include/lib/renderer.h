@@ -54,6 +54,10 @@ private:
     x86::reg32      m_depth;
     x86::reg32      m_colorPalette[256];
 #ifdef __ANDROID__
+public:
+    /** Presents a texture holding a full frame (the Glide target). */
+    void presentTexture(unsigned int texture);
+private:
     unsigned int m_presentProgram = 0;
     unsigned int m_presentVao = 0;
 #endif

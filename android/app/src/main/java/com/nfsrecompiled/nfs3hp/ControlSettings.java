@@ -28,6 +28,9 @@ final class ControlSettings {
 
     String language;
     int screen = SCREEN_FULL;
+    int outputHeight = 0;    // 0 = display height, -1 = game resolution, else pixels
+    int fpsLimit = 60;       // 0 = display maximum
+    boolean showFps = false;
     int layout = LAYOUT_AUTO;
     int steering = STEER_STICK;
     int opacity = 60;        // percent
@@ -52,6 +55,9 @@ final class ControlSettings {
         language = prefs.getString("language", systemLanguage());
         screen = prefs.getInt("screen", screen);
         layout = prefs.getInt("touchLayout", layout);
+        outputHeight = prefs.getInt("outputHeight", outputHeight);
+        fpsLimit = prefs.getInt("fpsLimit", fpsLimit);
+        showFps = prefs.getBoolean("showFps", showFps);
         steering = prefs.getInt("steeringMode", steering);
         opacity = prefs.getInt("opacity", opacity);
         size = prefs.getInt("size", size);
@@ -105,7 +111,8 @@ final class ControlSettings {
         }
         prefs.edit()
             .putString("language", language).putInt("screen", screen)
-            .putInt("touchLayout", layout).putInt("steeringMode", steering).putInt("opacity", opacity).putInt("size", size)
+            .putInt("touchLayout", layout).putInt("outputHeight", outputHeight)
+            .putInt("fpsLimit", fpsLimit).putBoolean("showFps", showFps).putInt("steeringMode", steering).putInt("opacity", opacity).putInt("size", size)
             .putInt("tiltRange", tiltRange).putFloat("tiltCenter", tiltCenter)
             .putBoolean("tiltInvert", tiltInvert).putInt("deadZone", deadZone)
             .putInt("steerCurve", steerCurve).putInt("pwmPeriod", pwmPeriod)

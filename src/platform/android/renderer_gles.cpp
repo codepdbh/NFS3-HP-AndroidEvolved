@@ -66,17 +66,19 @@ void Renderer::setVideoMode(x86::reg32 w,x86::reg32 h,x86::reg32 bpp){
 void Renderer::updatePalette(x86::reg32 count,const x86::reg32* colors){NFS2_ASSERT(count<=256);memcpy(m_colorPalette,colors,count*4);}
 x86::reg32 Renderer::getFrontBuffer()const{return m_videoMemory->getBlockStart()+m_currentBuffer*m_width*m_height*2;}
 x86::reg32 Renderer::getBackBuffer()const{return m_videoMemory->getBlockStart()+(1-m_currentBuffer)*m_width*m_height*2;}
-void Renderer::present(){
+void Renderer::present(){presentTexture(m_texture);}
+void Renderer::presentTexture(unsigned int texture){
     Gamepad::updateKeys();int w=0,h=0;SDL_GL_GetDrawableSize(m_window->m_window,&w,&h);if(w<=0||h<=0)return;
     glBindFramebuffer(GL_FRAMEBUFFER,0);glDisable(GL_DEPTH_TEST);glDisable(GL_BLEND);glDepthMask(GL_FALSE);
     glViewport(0,0,w,h);glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT);
     float left,top,sx,sy;Window::getViewport(w,h,left,top,sx,sy);
     glViewport(int(left),int(top),int(m_width*sx+0.5f),int(m_height*sy+0.5f));
-    glUseProgram(m_presentProgram);glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D,m_texture);
+    glUseProgram(m_presentProgram);glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D,texture);
     glBindVertexArray(m_presentVao);glDrawArrays(GL_TRIANGLES,0,3);glUseProgram(0);
 #ifndef NDEBUG
     GLenum error=glGetError(); if(error!=GL_NO_ERROR) SDL_LogError(SDL_LOG_CATEGORY_RENDER,"[NFS3][VIDEO] Present error 0x%x",error);
 #endif
+    Window::paceFrame();
     SDL_GL_SwapWindow(m_window->m_window);
 }
 void Renderer::update(){

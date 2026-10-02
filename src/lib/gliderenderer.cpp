@@ -1,5 +1,6 @@
 #include <lib/gliderenderer.h>
 #include <lib/renderer.h>
+#include <lib/window.h>
 #include <lib/glidetmu.h>
 #include <SDL_render.h>
 #include <SDL_video.h>
@@ -230,18 +231,37 @@ GlideRenderer::GlideRenderer(Renderer* renderer)
     glGenBuffers(1, &m_vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer);
 
+    m_targetWidth = m_renderer->m_width;
+    m_targetHeight = m_renderer->m_height;
+#ifdef __ANDROID__
+    // Supersampling: the game keeps its own coordinates, the GPU draws at the
+    // chosen output height (the transform below maps game space to the target).
+    Window::outputSize(m_targetWidth, m_targetHeight);
+    glGenTextures(1, &m_colorTarget);
+    glBindTexture(GL_TEXTURE_2D, m_colorTarget);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, m_targetWidth, m_targetHeight);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    const unsigned int colorTexture = m_colorTarget;
+#else
+    const unsigned int colorTexture = m_renderer->m_texture;
+#endif
+
     glGenRenderbuffers(1, &m_depthBuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, m_depthBuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, m_renderer->m_width, m_renderer->m_height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, m_targetWidth, m_targetHeight);
 
     glGenFramebuffers(1, &m_framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_renderer->m_texture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthBuffer);
     GLenum drawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
     glDrawBuffers(1, drawBuffers);
     GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    SDL_Log("[NFS3][GLIDE] Framebuffer %ux%u status=0x%x", m_renderer->m_width, m_renderer->m_height, framebufferStatus);
+    SDL_Log("[NFS3][GLIDE] Framebuffer %ux%u drawn at %dx%d status=0x%x", m_renderer->m_width, m_renderer->m_height,
+            m_targetWidth, m_targetHeight, framebufferStatus);
     NFS2_ASSERT(framebufferStatus == GL_FRAMEBUFFER_COMPLETE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -253,6 +273,9 @@ GlideRenderer::~GlideRenderer()
     delete[] m_vertices;
     delete m_tmus[0];
     glDeleteFramebuffers(1, &m_framebuffer);
+#ifdef __ANDROID__
+    glDeleteTextures(1, &m_colorTarget);
+#endif
 }
 
 void GlideRenderer::compileShaders()
@@ -339,7 +362,9 @@ void GlideRenderer::clear(x86::reg32 color)
     m_renderer->setCurrent();
     glDepthMask(true);
     glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+#ifndef __ANDROID__
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_renderer->m_texture, 0);
+#endif
     glClearColor(float(color >> 16 & 0xff)/255.0f, float(color >> 8 & 0xff)/255.0f, float(color >> 0 & 0xff)/255.0f, 0.0f);
 #ifdef __ANDROID__
     glClearDepthf(1.0f);
@@ -371,7 +396,9 @@ void GlideRenderer::swap()
     m_renderer->setCurrent();
     glEnable(GL_BLEND);
     glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+#ifndef __ANDROID__
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_renderer->m_texture, 0);
+#endif
 #ifdef __ANDROID__
     // The activity pins the surface to 60 Hz; deriving the interval from the
     // nominal 120 Hz mode gave 30 fps whenever the panel dropped to 60 Hz.
@@ -384,7 +411,7 @@ void GlideRenderer::swap()
     if (m_vertexCount)
     {
         flush();
-        glViewport(0, 0, m_renderer->m_width, m_renderer->m_height);
+        glViewport(0, 0, m_targetWidth, m_targetHeight);
         glUseProgram(m_shaderProgram);
         const float matrix[16] = {
             2.0f/m_renderer->m_width,0,0,0,
@@ -441,10 +468,14 @@ void GlideRenderer::swap()
 #ifndef __ANDROID__
     glFlush();
 #endif
+#ifdef __ANDROID__
+    m_renderer->presentTexture(m_colorTarget);
+#else
     glBindTexture(GL_TEXTURE_2D, m_renderer->m_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     m_renderer->present();
+#endif
     m_renderer->clearCurrent();
 #ifdef __ANDROID__
     s_lastFrameTriangles.store(int(m_vertexCount / 3));
