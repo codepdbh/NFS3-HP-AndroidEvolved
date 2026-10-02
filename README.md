@@ -1,154 +1,132 @@
 # NFS3 HP Android Evolved
 
-Native ARM64 Android community port of Need for Speed III: Hot Pursuit.
-Original game data is required and is not distributed. Only nfs3hp is built.
+**Need for Speed III: Hot Pursuit nativo en Android (ARM64)**, con el
+**NFS3 Modern Patch v1.6.1** integrado, controles táctiles pensados para jugar y
+soporte para mandos.
 
-See [ANDROID.md](ANDROID.md) for builds, installation, shared-storage paths,
-touch controls and verified milestones. Based on motor-dev/nfs-recompiled
-77ebdb3; original upstream documentation follows.
+No es un emulador: el ejecutable del juego está **recompilado estáticamente** de x86
+a C++ y compilado para ARM64, así que corre a velocidad nativa. Los archivos
+originales del juego **no se incluyen**: necesitas tu propia copia de NFS3.
 
-**DISCLAIMER**
+<p>
+<img src="screenshots/android-race.png" alt="Carrera con controles táctiles" width="49%">
+<img src="screenshots/android-launcher.png" alt="Menú de inicio" width="49%">
+</p>
+<p>
+<img src="screenshots/android-race-fullscreen.png" alt="Carrera a pantalla completa" width="49%">
+<img src="screenshots/android-menu.png" alt="Menú del juego en español" width="49%">
+</p>
 
-Readme and CMakeLists mostly AI-generated.
+## Características
 
-# nfs-recompiled
+- **Modern Patch 1.6.1 de VEG** recompilado: sus correcciones, menús, HUD y textos.
+- **Menú de inicio** para elegir antes de jugar:
+  - idioma: español, inglés, francés, alemán, italiano y sueco;
+  - pantalla: original 4:3, 16:9 o completa;
+  - resolución: hasta la nativa del móvil; el 3D se dibuja a esa altura aunque el juego trabaje a 640×480;
+  - límite de FPS, con contador opcional.
+- **Menús táctiles**: se tocan las opciones directamente. El gesto **Atrás** equivale a Esc
+  (volver, pausar y saltar cinemáticas).
+- **Controles de carrera** que aparecen solos al empezar una carrera:
+  - joystick analógico y GAS / FRENO / MANO;
+  - bocina, cámara y pausa;
+  - multitáctil real: puedes deslizar el dedo de un botón a otro.
+- **Ajustes de dirección**: también botones, deslizar o inclinación, con curva de
+  respuesta, zona muerta, tamaño, opacidad, modo zurdo, vibración y un editor para
+  mover y redimensionar los botones.
+- **Mandos Bluetooth/USB**: gatillos progresivos y dirección analógica. Al usar el mando
+  se ocultan los controles táctiles y vuelven al tocar la pantalla.
+- **Rendimiento**: compilado en Release `-O2`, render GLES 3 optimizado y frecuencia de
+  pantalla fijada según el límite de FPS.
 
-A static recompilation of **Need for Speed II: Special Edition** and **Need for Speed III: Hot Pursuit** from their original Win32 x86 executables into portable C++ that runs natively on Linux (and potentially other platforms). This is a toy project and not meant to be serious. But it works.
+## Requisitos
 
-<a href="screenshots/nfsiise-1.png"><img src="screenshots/nfsiise-1.png" alt="nfs2 intro video" width="50%"></a>
+- Android 8.0 o superior, procesador **ARM64**, OpenGL ES 3.
+- Tu copia de **Need for Speed III: Hot Pursuit** (carpetas `fedata` y `gamedata`, y `nfs3.exe`).
+- Los datos del **NFS3 Modern Patch v1.6.1** (`fedata` y `gamedata` del parche).
 
-<a href="screenshots/nfsiise-2.png"><img src="screenshots/nfsiise-2.png" alt="nfs2 menu" width="50%"></a>
+Probado en Samsung Galaxy S25 Ultra (Android 16) y Xiaomi Redmi Note 8; en el Redmi va
+a 59-60 FPS a resolución nativa.
 
-<a href="screenshots/nfsiise-3.png"><img src="screenshots/nfsiise-3.png" alt="nfs2 gameplay" width="50%"></a>
+## Instalación
 
-<a href="screenshots/nfsiiihp-1.png"><img src="screenshots/nfsiiihp-1.png" alt="nfs3 menu" width="50%"></a>
+1. Descarga el APK desde [Releases](../../releases) e instálalo.
+2. Copia tus archivos del juego a la memoria interna, en
+   **`/storage/emulated/0/nfs3hpandroidevolved/`**:
 
-<a href="screenshots/nfsiiihp-2.png"><img src="screenshots/nfsiiihp-2.png" alt="nfs3 gameplay" width="50%"></a>
+   ```text
+   nfs3hpandroidevolved/
+   ├── nfs3.exe        (solo se lee, no se ejecuta)
+   ├── fedata/
+   └── gamedata/
+   ```
 
-## Quick Start: Running the Game
+   Usa la instalación de tu PC (o `fedata`/`gamedata` del CD) y copia encima los
+   `fedata`/`gamedata` del Modern Patch 1.6.1. Desde un PC con ADB:
 
-If you have obtained a release binary, here is how to get the game running.
+   ```bash
+   adb push fedata gamedata nfs3.exe /sdcard/nfs3hpandroidevolved/
+   python scripts/copy-modern-patch-data.py /ruta/al/ModernPatch
+   ```
+3. Abre la app, concede el **acceso a archivos** y pulsa **JUGAR**. El launcher crea
+   `install.win`, `nfs3.ini` y la configuración del driver si faltan.
 
-### 1. Game Data
-You need the original game files.
-1.  **Install the game** from your original CD (or mount the iso).
-    On Linux, install the game from the CD-ROM through Wine, e.g. `WINEARCH=win32 WINEPREFIX=/opt/win98 wine /mnt/AUTORUN.EXE`
-2.  **Copy CD data**: The game expects certain files to be on the CD. To run without the CD, copy the `Fedata` and `GameData` folders from the CD-ROM into your game installation directory (merging with existing folders if necessary).
-    *   *Tip*: You can check the `install.win` file in your installation directory. It lists paths; any path starting with a drive letter (like `D:\`) needs to be present on your disk relative to the executable for portable play.
+## Controles
 
-### 2. Running
-Run the executable from the terminal. The game supports positional arguments to locate data files.
-
-| Arguments | Behavior |
-|---|---|
-| **0 args** | `./nfs3hp` | Uses the current directory for both game data and "CD" files. |
-| **1 arg** | `./nfs3hp /path/to/game` | Uses the specified path for both game data and "CD" files. |
-| **2 args** | `./nfs3hp /path/to/install /path/to/cdrom` | Specifies separate paths for the installed files and the CD-ROM content. |
-
-**Examples:**
-```bash
-# Data and executable in the same folder
-$ ./nfs3hp
-
-# Executable separate from data
-$ ./build/nfs3hp /home/user/games/nfs3
-
-# Separate install and CD mount
-$ ./build/nfs2se /home/user/games/nfs2 /mnt/cdrom
-```
-
-## Building from source
-
-### Prerequisites
-- CMake ≥ 3.15
-- A C++17 compiler (GCC or Clang)
-- SDL2 development libraries
-- OpenGL development libraries
-- NASM (for x87 FPU optimizations)
-- Python 3 (only if regenerating disassembly)
-
-**Debian / Ubuntu:**
-```bash
-sudo apt install build-essential cmake nasm python3 python3-pip \
-               libsdl2-dev libgl-dev
-```
-
-### Build Instructions
-Windows users with the bundled SDL2 library can point CMake at the `/sdl2` subdirectory (this is done automatically if you configure from within the project root).
-
-```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build
-```
-
-### CMake Options
-| Option | Default | Description |
+| Táctil | Mando | Juego |
 |---|---|---|
-| `WITH_PEDANTIC_FPU` | `OFF` | Use strict 80-bit extended-precision FPU emulation. Required for NFS3 software renderer glitches on Linux. |
-| `WITH_MMX` | `ON` | Enable MMX instruction support. |
+| Joystick (o botones / deslizar / inclinación) | Stick izquierdo o cruceta | Dirección |
+| GAS / FRENO | RT / LT (progresivos) | Acelerar / frenar |
+| MANO | X | Freno de mano |
+| Cámara · Bocina · Pausa | Y · Select · Start | Cámara · bocina · pausa |
+| — | LB / RB | Marcha − / + |
+| Tocar el menú · gesto Atrás | A · B | Aceptar · volver |
 
-Example:
-```bash
-cmake -B build -DWITH_PEDANTIC_FPU=ON
+El botón ⚙ abre los ajustes de controles durante la partida.
+
+## Compilar
+
+Necesitas Android Studio (JDK 17+), SDK 35, NDK **27.2.12479018**, CMake **3.30.5**,
+Git y Python 3.
+
+```powershell
+./scripts/build-android.ps1        # Windows
+bash scripts/build-android.sh      # Linux / WSL
 ```
 
-## Regenerating Disassembled Files
+El APK queda en `android/app/build/outputs/apk/release/app-release.apk`, firmado con
+la clave de depuración. Por defecto se compila el Modern Patch; con
+`gradlew -p android assembleRelease -PoriginalExe` se compila el ejecutable original.
 
-The repository contains pre-generated C++ code in `src/nfs2se/disassembly` and `src/nfs3hp/disassembly`. You do not need to run the disassembler to build the project.
+Los detalles técnicos están en [ANDROID.md](ANDROID.md). Ahí se explica cómo se
+recompila el parche (`disassemble_nfs3hp_modern.py`), las funciones de Windows añadidas
+y el diagnóstico.
 
-If you modify the disassembly logic in `disasm/`, you must regenerate the sources:
+## Cómo funciona
 
-1.  Ensure you have the original executables and DLLs:
-    *   **NFS II SE**: Place `nfs2sen.exe` and `eacsnd.dll` in the `nfs2se/` folder.
-    *   **NFS III HP**: Place `nfs3.exe`, `eacsnd.dll`, `softtria.dll`, and `voodoo2a.dll` in the `nfs3hp/` folder.
-2.  Install Python dependencies:
-    ```bash
-    pip3 install capstone
-    ```
-3.  Run the generation scripts:
-    ```bash
-    python3 disassemble_nfs2se.py
-    python3 disassemble_nfs3hp.py
-    ```
+`disasm/` traduce cada instrucción x86 del `.exe` a C++ y `src/lib/` reimplementa las
+partes de Windows que usa el juego sobre SDL2 y OpenGL ES:
+- DirectDraw, DirectInput y DirectSound;
+- Glide 2;
+- kernel32 y user32.
 
-## Project Structure
+El Modern Patch modifica el `.exe` en el sitio, así que se recompila con las mismas
+pistas que el original. Hubo que ajustar las zonas donde Veg cambió código por datos o
+datos por código.
 
-### Supported Games
-| Game | Executable | Generated Target |
-|---|---|---|
-| NFS II: SE | `nfs2se/nfs2sen.exe` | `nfs2se` |
-| NFS III: HP | `nfs3hp/nfs3.exe` | `nfs3hp` |
+## Limitaciones conocidas
 
-### How it works
-1. **Python disassembler** (`disasm/`) — Uses Capstone to disassemble the original `.exe` and `.dll` files and emit C++ source files that reproduce the original program logic as function calls on a virtual CPU.
-2. **Virtual x86 CPU** — A `x86::CPU` struct (`include/cpu.h`) with general-purpose registers, flags, a full x87 FPU (with optional 80-bit extended precision via NASM routines), and MMX support.
-3. **Win32 API layer** — Minimal, native C++ reimplementations of 18 Win32 API modules (kernel32, user32, gdi32, DirectDraw, DirectInput, DirectSound, Glide 2x, etc.) provide the runtime environment the original code needs.
-4. **SDL2 + OpenGL backend** — Platform services (windowing, audio, input, file I/O, timers, threads) are implemented on top of SDL2. The Glide 2x renderer translates 3Dfx draw calls into OpenGL.
+- Sin panorámica real (Hor+): el modo Completa estira la imagen 4:3. El parche solo
+  ensancha el campo de visión con su propio driver Glide 3, que este runtime no implementa.
+- El juego está pensado para 60 FPS; por encima puede comportarse de forma rara.
+- El multijugador en red no está probado.
 
-### File Tree
-```
-disasm/                  Python disassembly framework
-  codegen/               x86 instruction -> C++ code generators
-  ordlookup/             DLL ordinal-to-name lookup tables
-disassemble_nfs2se.py    Disassembly driver for NFS II: SE
-disassemble_nfs3hp.py    Disassembly driver for NFS III: HP
-include/
-  cpu.h                  Virtual x86 CPU struct (registers, flags)
-  fpu.h                  x87 FPU emulation (80-bit extended precision)
-  mmx.h                  MMX instruction support
-  x86.h                  Base register types and utility macros
-  lib/                   Platform abstraction headers
-  winapi/                Win32 API reimplementation headers
-    ddraw/               IDirectDraw interfaces
-    dinput/              IDirectInput interfaces
-    dsound/              IDirectSound interfaces
-src/
-  lib/                   Shared runtime library (nfs_core)
-    sdl-backend/         SDL2 platform backend (file, audio, events, etc.)
-    winapi/              Win32 API implementations
-    x87.asm              NASM routines for 80-bit FPU operations
-  nfs2se/                NFS II: SE entry point + generated disassembly
-  nfs3hp/                NFS III: HP entry point + generated disassembly
-nfs2se/                  Original executables that can be decompiled for NFS2: SE
-nfs3hp/                  Original executables that can be decompiled for NFS3: HP
-```
+## Créditos
+
+- [motor-dev/nfs-recompiled](https://github.com/motor-dev/nfs-recompiled): la
+  recompilación estática en la que se basa este port. Su documentación original está en
+  [docs/UPSTREAM.md](docs/UPSTREAM.md).
+- [NFS3 Modern Patch](http://veg.by/en/projects/nfs3/) de Evgeny Vrublevsky (VEG).
+- [SDL 2](https://github.com/libsdl-org/SDL) y [sse2neon](https://github.com/DLTcollab/sse2neon).
+- Need for Speed es una marca de Electronic Arts. Este proyecto no está afiliado a EA
+  y no distribuye ningún archivo del juego.
