@@ -9183,7 +9183,7 @@ L_0x004fc14b:
     // 004fc15f  e9ddfcffff             -jmp 0x4fbe41
     goto L_0x004fbe41;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -10989,7 +10989,7 @@ L_0x004fc76b:
     // 004fc773  e927ffffff             -jmp 0x4fc69f
     goto L_0x004fc69f;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

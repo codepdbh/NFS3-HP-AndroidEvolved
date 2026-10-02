@@ -134,8 +134,9 @@ class Application(Module):
                                                            '\n    '.join(self.generate(instruction, (function_start, function_end), function_names))))
                             fallthrough = instruction.mnemonic not in ['jmp', 'ret']
                         if subroutine.dynamic_labels:
+                            # Switch targets outside this function are tail calls.
                             methods.write('  default:\n'
-                                          '    NFS2_ASSERT(false);\n'
+                                          '    return app->dynamic_call(cpu.ip, cpu);\n'
                                           '  }\n')
                         methods.write('}\n\n')
                     methods.write('}\n')

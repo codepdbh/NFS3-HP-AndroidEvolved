@@ -9281,7 +9281,7 @@ L_0x00403176:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -11039,7 +11039,7 @@ L_0x0040381a:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -15329,7 +15329,7 @@ L_0x004047e4:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -15649,7 +15649,7 @@ L_0x004047e4:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -16119,7 +16119,7 @@ L_0x004049ef:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -17415,7 +17415,7 @@ L_0x00404e30:
     // 00404e31  e912ffffff             -jmp 0x404d48
     goto L_0x00404d48;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -20760,7 +20760,7 @@ L_0x00405a0d:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

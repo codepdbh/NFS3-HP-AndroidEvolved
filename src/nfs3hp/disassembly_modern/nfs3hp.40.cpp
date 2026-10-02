@@ -5893,7 +5893,7 @@ L_0x004f1c24:
     // 004f1c2b  e92efcffff             -jmp 0x4f185e
     goto L_0x004f185e;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

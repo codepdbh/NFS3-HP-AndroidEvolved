@@ -3414,7 +3414,7 @@ L_0x00516a76:
     // 00516a85  eb45                   -jmp 0x516acc
     return sub_516acc(app, cpu);
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -4142,7 +4142,7 @@ L_0x00516a76:
     // 00516a85  eb45                   -jmp 0x516acc
     return sub_516acc(app, cpu);
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -8205,7 +8205,7 @@ L_0x00517138:
     // 00517164  e991fcffff             -jmp 0x516dfa
     return sub_516dfa(app, cpu);
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -14994,7 +14994,7 @@ L_0x00517b19:
     // 00517b1d  e951ffffff             -jmp 0x517a73
     goto L_0x00517a73;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

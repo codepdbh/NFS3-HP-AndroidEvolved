@@ -22692,7 +22692,7 @@ L_0x004a3ea0:
     // 004a3f03  eb9b                   -jmp 0x4a3ea0
     goto L_0x004a3ea0;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -24169,7 +24169,7 @@ L_0x004a4359:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

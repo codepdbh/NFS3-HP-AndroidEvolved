@@ -5175,7 +5175,7 @@ L_0x00441cee:
         goto L_0x004421b8;
     }
     // 00441d0a  ff2495901c4400         -jmp dword ptr [edx*4 + 0x441c90]
-    return app->dynamic_call(app->getMemory<x86::reg32>(4463760 + cpu.edx * 4), cpu);
+    cpu.ip = app->getMemory<x86::reg32>(4463760 + cpu.edx * 4); goto dynamic_jump;
   case 0x00441d11:
     // 00441d11  8b1554575500           -mov edx, dword ptr [0x555754]
     cpu.edx = app->getMemory<x86::reg32>(x86::reg32(5592916) /* 0x555754 */);
@@ -6628,7 +6628,7 @@ L_0x004422db:
     // 00442367  e96fffffff             -jmp 0x4422db
     goto L_0x004422db;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -6736,7 +6736,7 @@ L_0x00441cee:
         goto L_0x004421b8;
     }
     // 00441d0a  ff2495901c4400         -jmp dword ptr [edx*4 + 0x441c90]
-    return app->dynamic_call(app->getMemory<x86::reg32>(4463760 + cpu.edx * 4), cpu);
+    cpu.ip = app->getMemory<x86::reg32>(4463760 + cpu.edx * 4); goto dynamic_jump;
   case 0x00441d11:
     // 00441d11  8b1554575500           -mov edx, dword ptr [0x555754]
     cpu.edx = app->getMemory<x86::reg32>(x86::reg32(5592916) /* 0x555754 */);
@@ -8190,7 +8190,7 @@ L_0x004422db:
     // 00442367  e96fffffff             -jmp 0x4422db
     goto L_0x004422db;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -9845,7 +9845,7 @@ L_0x0044282d:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -14553,7 +14553,7 @@ L_0x004435dd:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -15519,7 +15519,7 @@ L_0x00443859:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

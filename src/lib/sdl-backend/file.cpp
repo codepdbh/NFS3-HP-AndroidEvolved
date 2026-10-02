@@ -20,6 +20,8 @@
 # define O_BINARY 0
 #endif
 #include <algorithm>
+#include <atomic>
+#include <cctype>
 #include <SDL_log.h>
 
 
@@ -132,6 +134,29 @@ static std::string resolvePathCaseInsensitive(const std::string& path)
     }
 
     return resolved;
+}
+
+// 1 while a race is loaded, 0 in the front end. Opening track data starts a
+// race; opening a front-end menu ends it (pause menus are named ps*.mnu).
+static std::atomic<int> s_gameState{0};
+
+static void noteGameState(const std::string& path)
+{
+    std::string lower(path);
+    std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+    if (lower.find("/gamedata/tracks/") != std::string::npos)
+        s_gameState.store(1);
+    else if (lower.find("/fedata/menus/") != std::string::npos)
+    {
+        const std::string name = lower.substr(lower.find_last_of('/') + 1);
+        if (name.compare(0, 2, "ps") != 0)
+            s_gameState.store(0);
+    }
+}
+
+int File::gameState()
+{
+    return s_gameState.load();
 }
 
 std::string File::hostPath(const char* path)
@@ -252,6 +277,7 @@ File::File(const char* path, x86::reg32 mode, x86::reg32 flags, x86::reg32 creat
     for (std::string::iterator it = m_filename.begin(); it != m_filename.end(); ++it)
         if (*it == '\\') *it = '/';
     m_filename = resolvePathCaseInsensitive(m_filename);
+    noteGameState(m_filename);
     int openFlags = O_BINARY;
     switch(mode)
     {
@@ -400,3 +426,11 @@ x86::reg32 File::remove(const char *filename)
 
 }
 
+#ifdef __ANDROID__
+#include <jni.h>
+extern "C" JNIEXPORT jint JNICALL
+Java_com_nfsrecompiled_nfs3hp_NFS3Activity_nativeGetGameState(JNIEnv*, jclass)
+{
+    return win32::File::gameState();
+}
+#endif

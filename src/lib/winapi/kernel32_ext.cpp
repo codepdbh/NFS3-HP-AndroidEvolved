@@ -76,7 +76,10 @@ static x86::reg32 heapAllocate(WinApplication* app, x86::reg32 bytes, bool zero)
     }
     app->getMemory<x86::reg32>(block) = capacity;
     app->getMemory<x86::reg32>(block + 4) = request;
-    if (zero) memset(&app->getMemory<x86::reg8>(block + HEADER), 0, capacity);
+    // Always hand out zeroed memory: before the patch every guest allocation
+    // came from fresh, zeroed blocks, and the game relies on that in places.
+    NFS2_USE(zero);
+    memset(&app->getMemory<x86::reg8>(block + HEADER), 0, capacity);
     return block + HEADER;
 }
 

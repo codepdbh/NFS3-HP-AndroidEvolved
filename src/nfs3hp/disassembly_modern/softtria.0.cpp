@@ -6375,7 +6375,7 @@ L_0x00a629bc:
     // 00a629de  eb8d                   -jmp 0xa6296d
     goto L_0x00a6296d;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -8354,7 +8354,7 @@ L_0x00a62fde:
     cpu.esp += 4+8 /*0x8*/;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -10909,7 +10909,7 @@ L_0x00a638f4:
     cpu.esp += 4+20 /*0x14*/;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -11438,7 +11438,7 @@ L_0x00a63b18:
     cpu.esp += 4+12 /*0xc*/;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

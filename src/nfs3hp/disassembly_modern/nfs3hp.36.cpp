@@ -860,7 +860,7 @@ L_0x004e0afc:
     // 004e0c0a  e994feffff             -jmp 0x4e0aa3
     goto L_0x004e0aa3;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

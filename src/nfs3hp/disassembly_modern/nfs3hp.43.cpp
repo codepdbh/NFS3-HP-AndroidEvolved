@@ -13265,7 +13265,7 @@ L_0x004f9784:
     cpu.esp += 4+24 /*0x18*/;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

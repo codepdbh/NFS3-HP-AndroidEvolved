@@ -822,7 +822,7 @@ L_0x00aadc63:
     // 00aadc72  eb45                   -jmp 0xaadcb9
     return sub_aadcb9(app, cpu);
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -1550,7 +1550,7 @@ L_0x00aadc63:
     // 00aadc72  eb45                   -jmp 0xaadcb9
     return sub_aadcb9(app, cpu);
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -5613,7 +5613,7 @@ L_0x00aae325:
     // 00aae351  e991fcffff             -jmp 0xaadfe7
     return sub_aadfe7(app, cpu);
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

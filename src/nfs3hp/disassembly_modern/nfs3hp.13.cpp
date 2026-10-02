@@ -4218,7 +4218,7 @@ L_0x00446017:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -4597,7 +4597,7 @@ L_0x004461bd:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -8588,7 +8588,7 @@ L_0x00446e75:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -9181,7 +9181,7 @@ L_0x00446fe6:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -10520,7 +10520,7 @@ L_0x0044734e:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -10813,7 +10813,7 @@ L_0x00447459:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -12764,7 +12764,7 @@ L_0x00447b11:
     cpu.esp += 4;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -19855,7 +19855,7 @@ start:
         return sub_4493a3(app, cpu);
     }
     // 0044928e  ff249518924400         -jmp dword ptr [edx*4 + 0x449218]
-    return app->dynamic_call(app->getMemory<x86::reg32>(4493848 + cpu.edx * 4), cpu);
+    cpu.ip = app->getMemory<x86::reg32>(4493848 + cpu.edx * 4); goto dynamic_jump;
   case 0x00449295:
     // 00449295  e896feffff             -call 0x449130
     cpu.esp -= 4;
@@ -20072,7 +20072,7 @@ L_0x00449361:
     // 00449363  eb3e                   -jmp 0x4493a3
     return sub_4493a3(app, cpu);
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

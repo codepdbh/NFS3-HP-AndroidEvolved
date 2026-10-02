@@ -139,15 +139,16 @@ def get_goto_address(instruction, function_bounds, function_names, operand):
         else:
             if operand.mem.scale != 1:
                 print('%#x' % instruction.address, instruction.mnemonic, instruction.op_str)
+        inside = [dest for dest in instruction.potential_destinations
+                  if function_bounds[0] <= dest <= function_bounds[1]]
         for dest in instruction.potential_destinations:
-            if dest < function_bounds[0] or dest > function_bounds[1]:
-                print('error! switch/case with at least one jump out of reach; function 0x%x/0x%x, jump to 0x%x' % (function_bounds[0], function_bounds[1], dest))
-                return 'return app->dynamic_call(app->getMemory<x86::reg32>(%s), cpu);' % (' + '.join(offsets))
-        else:
-            if instruction.potential_destinations:
-                return 'cpu.ip = app->getMemory<x86::reg32>(%s); goto dynamic_jump;' % (' + '.join(offsets))
-            else:
-                return 'return app->dynamic_call(app->getMemory<x86::reg32>(%s), cpu);' % (' + '.join(offsets))
+            if dest not in inside:
+                print('warning: switch/case jumps out of function 0x%x/0x%x to 0x%x; using a tail call for it' % (function_bounds[0], function_bounds[1], dest))
+        if inside:
+            # Targets inside the function are cases of the dynamic_jump switch;
+            # its default branch tail-calls any target outside the function.
+            return 'cpu.ip = app->getMemory<x86::reg32>(%s); goto dynamic_jump;' % (' + '.join(offsets))
+        return 'return app->dynamic_call(app->getMemory<x86::reg32>(%s), cpu);' % (' + '.join(offsets))
     else:
         assert False, operand.type
 

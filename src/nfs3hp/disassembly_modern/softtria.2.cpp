@@ -11647,7 +11647,7 @@ L_0x00a96b92:
     cpu.esp += 4+12 /*0xc*/;
     return;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

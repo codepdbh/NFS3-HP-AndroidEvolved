@@ -15636,7 +15636,7 @@ L_0x00a56a22:
     // 00a56a31  eb45                   -jmp 0xa56a78
     return sub_a56a78(app, cpu);
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -16364,7 +16364,7 @@ L_0x00a56a22:
     // 00a56a31  eb45                   -jmp 0xa56a78
     return sub_a56a78(app, cpu);
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 
@@ -20427,7 +20427,7 @@ L_0x00a570e4:
     // 00a57110  e991fcffff             -jmp 0xa56da6
     return sub_a56da6(app, cpu);
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

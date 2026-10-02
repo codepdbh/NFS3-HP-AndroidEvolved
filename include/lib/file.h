@@ -83,6 +83,8 @@ public:
     static x86::reg32 remove(const char* filename);
     /** Host path for a game (Win32) path, resolved case-insensitively. */
     static std::string hostPath(const char* path);
+    /** 1 while a race is loaded, 0 in the front end (from the files the game opens). */
+    static int gameState();
 
     operator void*() { return reinterpret_cast<void*>(static_cast<intptr_t>(m_file)+1); }
 private:

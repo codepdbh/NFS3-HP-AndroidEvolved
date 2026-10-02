@@ -22399,7 +22399,7 @@ L_0x00510298:
     // 0051029c  e92effffff             -jmp 0x5101cf
     goto L_0x005101cf;
   default:
-    NFS2_ASSERT(false);
+    return app->dynamic_call(cpu.ip, cpu);
   }
 }
 

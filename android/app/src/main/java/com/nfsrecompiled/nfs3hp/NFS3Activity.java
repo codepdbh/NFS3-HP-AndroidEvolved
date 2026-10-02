@@ -26,6 +26,7 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
     private static native void nativeSetDisplayAspect(float aspect);
     private static native int nativeGetFrameTriangles();
     private static native int nativeGetRenderWidth();
+    private static native int nativeGetGameState();
 
     /**
      * The front end always runs at 640x480 and its animated backdrops draw about a
@@ -111,9 +112,11 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
         int triangles = nativeGetFrameTriangles();
         int width = nativeGetRenderWidth();
         int current = controls.getMode();
-        boolean drawing3d = triangles > 0;
-        int wanted = drawing3d && (width > 640 || triangles >= RACE_TRIANGLES)
-            ? TouchControlsView.MODE_RACE : TouchControlsView.MODE_MENU;
+        // The game state comes from the files the game loads (track data starts
+        // a race, a front-end menu ends it); the Modern Patch races at 640x480,
+        // so resolution alone cannot tell. Triangle count is a fallback.
+        boolean race = nativeGetGameState() == 1 || width > 640 || triangles >= RACE_TRIANGLES;
+        int wanted = race ? TouchControlsView.MODE_RACE : TouchControlsView.MODE_MENU;
         long now = android.os.SystemClock.uptimeMillis();
         if (wanted == current) { candidateMode = -1; return; }
         if (wanted != candidateMode) { candidateMode = wanted; candidateSince = now; return; }
