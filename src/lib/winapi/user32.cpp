@@ -38,7 +38,6 @@ LRESULT CallNextHookEx(WinApplication* app, x86::CPU& cpu,
     NFS2_USE(nCode);
     NFS2_USE(wParam);
     NFS2_USE(lParam);
-    NFS2_ASSERT(false);
     return 0;
 }
 
@@ -269,8 +268,8 @@ HWND GetDesktopWindow(WinApplication* app, x86::CPU& cpu)
 {
     NFS2_USE(app);
     NFS2_USE(cpu);
-    NFS2_ASSERT(false);
-    return -1;
+    // Only used to query desktop capabilities through GetWindowDC/GetDeviceCaps.
+    return 0x0000de5c;
 }
 
 SHORT GetKeyState(WinApplication* app, x86::CPU& cpu,
@@ -334,8 +333,7 @@ HDC GetWindowDC(WinApplication* app, x86::CPU& cpu,
     NFS2_USE(app);
     NFS2_USE(cpu);
     NFS2_USE(hWnd);
-    NFS2_ASSERT(false);
-    return -1;
+    return 0x00000dc1;
 }
 
 LONG GetWindowLongA(WinApplication* app, x86::CPU& cpu,
@@ -490,6 +488,7 @@ BOOL SetForegroundWindow(WinApplication* app, x86::CPU& cpu,
 BOOL SetWindowPos(WinApplication* app, x86::CPU& cpu,
                   HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags)
 {
+    // The SDL window is fullscreen and owned by the platform.
     NFS2_USE(app);
     NFS2_USE(cpu);
     NFS2_USE(hWnd);
@@ -499,8 +498,7 @@ BOOL SetWindowPos(WinApplication* app, x86::CPU& cpu,
     NFS2_USE(cx);
     NFS2_USE(cy);
     NFS2_USE(uFlags);
-    NFS2_ASSERT(false);
-    return 0;
+    return 1;
 }
 
 HHOOK SetWindowsHookExA(WinApplication* app, x86::CPU& cpu,
@@ -577,8 +575,7 @@ BOOL UnhookWindowsHookEx(WinApplication* app, x86::CPU& cpu,
     NFS2_USE(app);
     NFS2_USE(cpu);
     NFS2_USE(hhk);
-    NFS2_ASSERT(false);
-    return 0;
+    return 1;
 }
 
 void keybd_event(WinApplication* app, x86::CPU& cpu,

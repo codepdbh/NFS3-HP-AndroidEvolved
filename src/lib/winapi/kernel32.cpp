@@ -1,3 +1,7 @@
+#include <sys/stat.h>
+#ifndef S_ISDIR
+# define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif
 #include <winapi/kernel32.h>
 #include <x86.h>
 #include <lib/memmap.h>
@@ -10,6 +14,12 @@
 #include <lib/window.h>
 #include <lib/thread.h>
 #include <cstring>
+#include <cstdio>
+#ifdef _WIN32
+# include <direct.h>
+#else
+# include <unistd.h>
+#endif
 #include <vector>
 #include <SDL_log.h>
 
@@ -80,10 +90,13 @@ BOOL CreateDirectoryA(WinApplication* app, x86::CPU& cpu,
 {
     NFS2_USE(app);
     NFS2_USE(cpu);
-    NFS2_USE(lpPathName);
     NFS2_USE(lpSecurityAttributes);
-    NFS2_ASSERT(false);
-    return 0;
+    const std::string path = File::hostPath(lpPathName);
+#ifdef _WIN32
+    return _mkdir(path.c_str()) == 0 ? 1 : 0;
+#else
+    return mkdir(path.c_str(), 0777) == 0 ? 1 : 0;
+#endif
 }
 
 HANDLE CreateEventA(WinApplication* app, x86::CPU& cpu,
@@ -280,8 +293,7 @@ BOOL FlushFileBuffers(WinApplication* app, x86::CPU& cpu,
     NFS2_USE(app);
     NFS2_USE(cpu);
     NFS2_USE(hFile);
-    NFS2_ASSERT(false);
-    return 0;
+    return 1;
 }
 
 BOOL FreeEnvironmentStringsA(WinApplication* app, x86::CPU& cpu,
@@ -306,8 +318,7 @@ UINT GetACP(WinApplication* app, x86::CPU& cpu)
 {
     NFS2_USE(app);
     NFS2_USE(cpu);
-    NFS2_ASSERT(false);
-    return 0;
+    return 1252;
 }
 
 BOOL GetCPInfo(WinApplication* app, x86::CPU& cpu,
@@ -412,8 +423,7 @@ DWORD GetCurrentProcessId(WinApplication* app, x86::CPU& cpu)
 {
     NFS2_USE(app);
     NFS2_USE(cpu);
-    NFS2_ASSERT(false);
-    return 0;
+    return 0x1000;
 }
 
 DWORD GetCurrentThreadId(WinApplication* app, x86::CPU& cpu)
@@ -470,15 +480,11 @@ DWORD GetFileAttributesA(WinApplication* app, x86::CPU& cpu,
 {
     NFS2_USE(app);
     NFS2_USE(cpu);
-    File f(lpFileName, GENERIC_READ, 0, OPEN_EXISTING);
-    if (f)
-    {
-        return 0x1;
-    }
-    else
-    {
+    // The Modern Patch checks its install folders for FILE_ATTRIBUTE_DIRECTORY.
+    struct stat info;
+    if (stat(File::hostPath(lpFileName).c_str(), &info) != 0)
         return 0xffffffff;
-    }
+    return S_ISDIR(info.st_mode) ? 0x10 : 0x1;
 }
 
 BOOL GetFileTime(WinApplication* app, x86::CPU& cpu,
@@ -616,15 +622,15 @@ HMODULE GetModuleHandleA(WinApplication* app, x86::CPU& cpu,
 {
     NFS2_USE(app);
     NFS2_USE(cpu);
-    if (lpModuleName)
-    {
-        NFS2_ASSERT(false);
-        return 0xffffffff;
-    }
-    else
-    {
+    if (!lpModuleName)
         return 1;
+    // Only the recompiled libraries exist; NULL tells the caller to do without.
+    if (!win32::Library::findLibrary(lpModuleName))
+    {
+        SDL_Log("[NFS3][LIBRARY] GetModuleHandle(%s): not available", lpModuleName);
+        return 0;
     }
+    return app->allocateResource(new win32::LibraryHandle(lpModuleName));
 }
 
 UINT GetOEMCP(WinApplication* app, x86::CPU& cpu)
@@ -652,10 +658,16 @@ FARPROC GetProcAddress(WinApplication* app, x86::CPU& cpu,
                        HMODULE hModule, LPCSTR lpProcName)
 {
     NFS2_USE(cpu);
-    win32::LibraryHandle* libraryHandle = dynamic_cast<win32::LibraryHandle*>(app->getResource(hModule));
-    win32::Library* l = libraryHandle->getLibrary();
+    win32::LibraryHandle* libraryHandle = hModule ? dynamic_cast<win32::LibraryHandle*>(app->getResource(hModule)) : nullptr;
+    win32::Library* l = libraryHandle ? libraryHandle->getLibrary() : nullptr;
+    if (!l)
+    {
+        SDL_Log("[NFS3][LIBRARY] GetProcAddress(%s): unknown module", lpProcName);
+        return 0;
+    }
     win32::Library::Symbol s = (*l)[lpProcName];
-    NFS2_ASSERT(s.first);
+    if (!s.first)
+        SDL_Log("[NFS3][LIBRARY] GetProcAddress(%s): not implemented", lpProcName);
     return s.first;
 }
 
@@ -713,8 +725,7 @@ int GetThreadPriority(WinApplication* app, x86::CPU& cpu,
     NFS2_USE(app);
     NFS2_USE(cpu);
     NFS2_USE(hThread);
-    NFS2_ASSERT(false);
-    return 0;
+    return 0;  // THREAD_PRIORITY_NORMAL
 }
 
 DWORD GetTickCount(WinApplication* app, x86::CPU& cpu)
@@ -730,9 +741,8 @@ DWORD GetTimeZoneInformation(WinApplication* app, x86::CPU& cpu,
 {
     NFS2_USE(app);
     NFS2_USE(cpu);
-    NFS2_USE(lpTimeZoneInformation);
-    NFS2_ASSERT(false);
-    return 0;
+    if (lpTimeZoneInformation) memset(lpTimeZoneInformation, 0, sizeof(*lpTimeZoneInformation));
+    return 0;  // TIME_ZONE_ID_UNKNOWN
 }
 
 DWORD GetVersion(WinApplication* app, x86::CPU& cpu)
@@ -791,10 +801,10 @@ UINT GetWindowsDirectoryA(WinApplication* app, x86::CPU& cpu,
 {
     NFS2_USE(app);
     NFS2_USE(cpu);
-    NFS2_USE(lpBuffer);
-    NFS2_USE(uSize);
-    NFS2_ASSERT(false);
-    return 0;
+    static const char windows[] = "C:\\WINDOWS";
+    if (!lpBuffer || uSize < sizeof(windows)) return sizeof(windows);
+    memcpy(lpBuffer, windows, sizeof(windows));
+    return sizeof(windows) - 1;
 }
 
 void GlobalMemoryStatus(WinApplication* app, x86::CPU& cpu,
@@ -844,9 +854,9 @@ HMODULE LoadLibraryA(WinApplication* app, x86::CPU& cpu,
     }
     else
     {
+        // Windows returns NULL for a library that cannot be loaded.
         delete lib;
-        //NFS2_ASSERT(false);
-        return -1;
+        return 0;
     }
 }
 
@@ -875,10 +885,7 @@ BOOL MoveFileA(WinApplication* app, x86::CPU& cpu,
 {
     NFS2_USE(app);
     NFS2_USE(cpu);
-    NFS2_USE(lpExistingFileName);
-    NFS2_USE(lpNewFileName);
-    NFS2_ASSERT(false);
-    return 0;
+    return rename(File::hostPath(lpExistingFileName).c_str(), File::hostPath(lpNewFileName).c_str()) == 0 ? 1 : 0;
 }
 
 int MultiByteToWideChar(WinApplication* app, x86::CPU& cpu,
@@ -984,9 +991,12 @@ BOOL RemoveDirectoryA(WinApplication* app, x86::CPU& cpu, LPCSTR lpPathName)
 {
     NFS2_USE(app);
     NFS2_USE(cpu);
-    NFS2_USE(lpPathName);
-    NFS2_ASSERT(false);
-    return 0;
+    const std::string path = File::hostPath(lpPathName);
+#ifdef _WIN32
+    return _rmdir(path.c_str()) == 0 ? 1 : 0;
+#else
+    return rmdir(path.c_str()) == 0 ? 1 : 0;
+#endif
 }
 
 BOOL ResetEvent(WinApplication* app, x86::CPU& cpu, HANDLE hEvent)

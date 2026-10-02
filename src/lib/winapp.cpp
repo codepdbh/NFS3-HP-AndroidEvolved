@@ -243,4 +243,12 @@ void WinApplication::terminate()
     m_cpu.terminate = true;
 }
 
+void WinApplication::unknownCall(x86::reg32 address, x86::CPU& cpu)
+{
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                 "[NFS3][CPU] Indirect call to 0x%08x, which is not a recompiled function", address);
+    NFS2_ASSERT(false);
+    cpu.terminate = true;
+}
+
 }

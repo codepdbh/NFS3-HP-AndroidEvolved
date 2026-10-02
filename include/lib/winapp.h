@@ -162,11 +162,19 @@ public:
     void unmarkContext(const x86::CPU& cpu);
 
     void terminate();
+    /** Reports an indirect call to code that was not recompiled as a function. */
+    void unknownCall(x86::reg32 address, x86::CPU& cpu);
 
 public:
     inline void dynamic_call(uint32_t address, x86::CPU& cpu)
     {
-        const win32::Method& m = m_methods.find(address-0x400000)->second;
+        auto method = m_methods.find(address-0x400000);
+        if (method == m_methods.end())
+        {
+            unknownCall(address, cpu);
+            return;
+        }
+        const win32::Method& m = method->second;
         //SDL_LogDebug("[%lu] Calling method: %s", SDL_ThreadID(), m.name.c_str());
         m(this, cpu);
     }
