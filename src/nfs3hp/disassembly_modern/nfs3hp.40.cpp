@@ -7362,7 +7362,7 @@ void Application::sub_4f1fd4(WinApplication* app, x86::CPU& cpu)
     cpu.clear_co();
     cpu.set_szp(static_cast<x86::reg16>(cpu.ax & cpu.ax));
     // 004f1fe5  0f9cc0                 -setl al
-    NFS2_ASSERT(false);
+    cpu.al = (cpu.flags.sf != cpu.flags.of) ? 1 : 0;
     // 004f1fe8  0fb6c0                 -movzx eax, al
     cpu.eax = x86::reg32(cpu.al);
     // 004f1feb  85c0                   -test eax, eax
@@ -7408,7 +7408,7 @@ L_entry_0x004f1fd6:
     cpu.clear_co();
     cpu.set_szp(static_cast<x86::reg16>(cpu.ax & cpu.ax));
     // 004f1fe5  0f9cc0                 -setl al
-    NFS2_ASSERT(false);
+    cpu.al = (cpu.flags.sf != cpu.flags.of) ? 1 : 0;
     // 004f1fe8  0fb6c0                 -movzx eax, al
     cpu.eax = x86::reg32(cpu.al);
     // 004f1feb  85c0                   -test eax, eax

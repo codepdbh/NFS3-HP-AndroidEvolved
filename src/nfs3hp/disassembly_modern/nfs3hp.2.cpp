@@ -18125,7 +18125,11 @@ L_0x0040ffe3:
         cpu.set_szp(tmp);
     }
     // 0040ffeb  660fa3d1               +bt cx, dx
-    NFS2_ASSERT(false);
+    {
+        x86::reg16 mask = x86::reg16(1) << (x86::reg32(cpu.dx) & 15);
+        x86::reg16 value = cpu.cx;
+        cpu.flags.cf = (value & mask) != 0;
+    }
     // 0040ffef  73eb                   -jae 0x40ffdc
     if (!cpu.flags.cf)
     {
@@ -21766,7 +21770,11 @@ L_0x004103d2:
         goto L_0x00410401;
     }
     // 004103d7  660fa3d1               +bt cx, dx
-    NFS2_ASSERT(false);
+    {
+        x86::reg16 mask = x86::reg16(1) << (x86::reg32(cpu.dx) & 15);
+        x86::reg16 value = cpu.cx;
+        cpu.flags.cf = (value & mask) != 0;
+    }
     // 004103db  7212                   -jb 0x4103ef
     if (cpu.flags.cf)
     {

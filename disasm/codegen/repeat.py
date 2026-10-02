@@ -29,3 +29,9 @@ def cg_repne(instruction, code):
                 '}',
            ]
 cg_repnz = cg_repne
+
+
+def cg_lock(instruction, code):
+    # Only one guest thread runs at a time (WinApplication's execution
+    # context), so locked read-modify-write instructions are already atomic.
+    return code

@@ -13746,7 +13746,7 @@ L_0x004be73e:
     // 004be803  db45e0                 -fild dword ptr [ebp - 0x20]
     cpu.fpu.push(x86::Float(x86::sreg32(app->getMemory<x86::reg32>(cpu.ebp + x86::reg32(-32) /* -0x20 */))));
     // 004be806  da75e4                 -fidiv dword ptr [ebp - 0x1c]
-    NFS2_ASSERT(false);
+    cpu.fpu.st(0) /= x86::Float(double(x86::sreg32(app->getMemory<x86::reg32>(cpu.ebp + x86::reg32(-28) /* -0x1c */))));
     // 004be809  68abaaaa3f             -push 0x3faaaaab
     app->getMemory<x86::reg32>(cpu.esp-4) = 1068149419 /*0x3faaaaab*/;
     cpu.esp -= 4;
@@ -16923,7 +16923,7 @@ L_0x004bef07:
         cpu.set_szp(result);
     }
     // 004bef0d  0f9ec2                 -setle dl
-    NFS2_ASSERT(false);
+    cpu.dl = (cpu.flags.zf || cpu.flags.sf != cpu.flags.of) ? 1 : 0;
     // 004bef10  8955fc                 -mov dword ptr [ebp - 4], edx
     app->getMemory<x86::reg32>(cpu.ebp + x86::reg32(-4) /* -0x4 */) = cpu.edx;
     // 004bef13  8b06                   -mov eax, dword ptr [esi]

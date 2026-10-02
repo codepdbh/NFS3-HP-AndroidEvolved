@@ -33,6 +33,8 @@ EXTENDED_DATA = {(0x454f10, 0x455020): (0x454e44, 0x455020),
                  (0x472160, 0x4721f0): (0x472156, 0x4721f0)}
 DATA_SEGMENTS = [EXTENDED_DATA.get(s, s) for s in original.DATA_SEGMENTS if s not in PATCH_CODE_AREAS] + [
     (0x40ff80, 0x40ff9c),   # new lookup table
+    (0x41d6e4, 0x41d7e4),   # new table of 16-bit values
+    (0x4ccaf6, 0x4ccb84),   # new key code table
     (0x44be20, 0x44be60),   # blanked function, jump table, padding
     (0x4961f0, 0x496200),   # former jump table, now data pointers
     (0x4a39c6, 0x4a3db0),   # blanked original WinMain, then a new jump table

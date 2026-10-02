@@ -3064,7 +3064,11 @@ L_0x00496268:
     cpu.clear_co();
     cpu.set_szp((cpu.al &= x86::reg8(x86::sreg8(3 /*0x3*/))));
     // 0049626c  0fa30568277a00         +bt dword ptr [0x7a2768], eax
-    NFS2_ASSERT(false);
+    {
+        x86::reg32 mask = x86::reg32(1) << (x86::reg32(cpu.eax) & 31);
+        x86::reg32 value = app->getMemory<x86::reg32>(x86::reg32(8005480) /* 0x7a2768 */ + x86::reg32((x86::sreg32(cpu.eax) >> 5) * 4));
+        cpu.flags.cf = (value & mask) != 0;
+    }
     // 00496273  73f3                   -jae 0x496268
     if (!cpu.flags.cf)
     {

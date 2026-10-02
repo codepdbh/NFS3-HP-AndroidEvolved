@@ -501,7 +501,7 @@ private:
     static void sub_41d5a0(WinApplication* app, x86::CPU& cpu);
     static void sub_41d610(WinApplication* app, x86::CPU& cpu);
     static void sub_41d620(WinApplication* app, x86::CPU& cpu);
-    static void sub_41d6e4(WinApplication* app, x86::CPU& cpu);
+    static void sub_41d7e4(WinApplication* app, x86::CPU& cpu);
     static void sub_41d814(WinApplication* app, x86::CPU& cpu);
     static void sub_41d870(WinApplication* app, x86::CPU& cpu);
     static void sub_41d8a0(WinApplication* app, x86::CPU& cpu);
@@ -3205,7 +3205,7 @@ private:
     static void sub_4cc970(WinApplication* app, x86::CPU& cpu);
     static void sub_4cca00(WinApplication* app, x86::CPU& cpu);
     static void sub_4ccaa0(WinApplication* app, x86::CPU& cpu);
-    static void sub_4ccaf6(WinApplication* app, x86::CPU& cpu);
+    static void sub_4ccb84(WinApplication* app, x86::CPU& cpu);
     static void sub_4ccc40(WinApplication* app, x86::CPU& cpu);
     static void sub_4ccca4(WinApplication* app, x86::CPU& cpu);
     static void sub_4cccc2(WinApplication* app, x86::CPU& cpu);

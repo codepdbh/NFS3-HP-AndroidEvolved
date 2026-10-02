@@ -516,7 +516,7 @@ Application::Application(const char* appName)
     registerMethod(0x0041d5a0, {"<Application>sub_41d5a0", &Application::sub_41d5a0});
     registerMethod(0x0041d610, {"<Application>sub_41d610", &Application::sub_41d610});
     registerMethod(0x0041d620, {"<Application>sub_41d620", &Application::sub_41d620});
-    registerMethod(0x0041d6e4, {"<Application>sub_41d6e4", &Application::sub_41d6e4});
+    registerMethod(0x0041d7e4, {"<Application>sub_41d7e4", &Application::sub_41d7e4});
     registerMethod(0x0041d814, {"<Application>sub_41d814", &Application::sub_41d814});
     registerMethod(0x0041d870, {"<Application>sub_41d870", &Application::sub_41d870});
     registerMethod(0x0041d8a0, {"<Application>sub_41d8a0", &Application::sub_41d8a0});
@@ -3220,7 +3220,7 @@ Application::Application(const char* appName)
     registerMethod(0x004cc970, {"<Application>sub_4cc970", &Application::sub_4cc970});
     registerMethod(0x004cca00, {"<Application>sub_4cca00", &Application::sub_4cca00});
     registerMethod(0x004ccaa0, {"<Application>sub_4ccaa0", &Application::sub_4ccaa0});
-    registerMethod(0x004ccaf6, {"<Application>sub_4ccaf6", &Application::sub_4ccaf6});
+    registerMethod(0x004ccb84, {"<Application>sub_4ccb84", &Application::sub_4ccb84});
     registerMethod(0x004ccc40, {"<Application>sub_4ccc40", &Application::sub_4ccc40});
     registerMethod(0x004ccca4, {"<Application>sub_4ccca4", &Application::sub_4ccca4});
     registerMethod(0x004cccc2, {"<Application>sub_4cccc2", &Application::sub_4cccc2});

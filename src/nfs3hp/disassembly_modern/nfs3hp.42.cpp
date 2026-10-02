@@ -13835,7 +13835,15 @@ void Application::sub_4f84a8(WinApplication* app, x86::CPU& cpu)
     cpu.esi = 5211024 /*0x4f8390*/;
 L_0x004f84c1:
     // 004f84c1  ad                     -lodsd eax, dword ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.eax = app->getMemory<x86::reg32>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 4;
+    }
+    else
+    {
+        cpu.esi += 4;
+    }
     // 004f84c2  85c0                   +test eax, eax
     cpu.clear_co();
     cpu.set_szp(static_cast<x86::reg32>(cpu.eax & cpu.eax));
@@ -13866,7 +13874,15 @@ L_0x004f84c1:
     // 004f84d2  89c2                   -mov edx, eax
     cpu.edx = cpu.eax;
     // 004f84d4  ad                     -lodsd eax, dword ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.eax = app->getMemory<x86::reg32>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 4;
+    }
+    else
+    {
+        cpu.esi += 4;
+    }
     // 004f84d5  8910                   -mov dword ptr [eax], edx
     app->getMemory<x86::reg32>(cpu.eax) = cpu.edx;
     // 004f84d7  ebe8                   -jmp 0x4f84c1
@@ -13996,7 +14012,15 @@ void Application::sub_4f8514(WinApplication* app, x86::CPU& cpu)
     cpu.esi = 5211024 /*0x4f8390*/;
 L_0x004f852f:
     // 004f852f  ad                     -lodsd eax, dword ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.eax = app->getMemory<x86::reg32>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 4;
+    }
+    else
+    {
+        cpu.esi += 4;
+    }
     // 004f8530  85c0                   +test eax, eax
     cpu.clear_co();
     cpu.set_szp(static_cast<x86::reg32>(cpu.eax & cpu.eax));
@@ -14006,7 +14030,15 @@ L_0x004f852f:
         goto L_0x004f8539;
     }
     // 004f8534  ad                     -lodsd eax, dword ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.eax = app->getMemory<x86::reg32>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 4;
+    }
+    else
+    {
+        cpu.esi += 4;
+    }
     // 004f8535  8918                   -mov dword ptr [eax], ebx
     app->getMemory<x86::reg32>(cpu.eax) = cpu.ebx;
     // 004f8537  ebf6                   -jmp 0x4f852f

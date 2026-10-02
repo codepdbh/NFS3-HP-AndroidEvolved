@@ -6622,7 +6622,15 @@ L_0x004e2ebf:
     cpu.esi = 5560144 /*0x54d750*/;
 L_0x004e2ee1:
     // 004e2ee1  ad                     -lodsd eax, dword ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.eax = app->getMemory<x86::reg32>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 4;
+    }
+    else
+    {
+        cpu.esi += 4;
+    }
     // 004e2ee2  85c0                   +test eax, eax
     cpu.clear_co();
     cpu.set_szp(static_cast<x86::reg32>(cpu.eax & cpu.eax));
@@ -6655,7 +6663,15 @@ L_0x004e2ee1:
     // 004e2ef8  8916                   -mov dword ptr [esi], edx
     app->getMemory<x86::reg32>(cpu.esi) = cpu.edx;
     // 004e2efa  ad                     -lodsd eax, dword ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.eax = app->getMemory<x86::reg32>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 4;
+    }
+    else
+    {
+        cpu.esi += 4;
+    }
     // 004e2efb  ebe4                   -jmp 0x4e2ee1
     goto L_0x004e2ee1;
 L_0x004e2efd:
@@ -6740,7 +6756,26 @@ L_0x004e2f40:
     // 004e2f4e  f366a7                 +repe cmpsw word ptr [esi], word ptr es:[edi]
     while (cpu.ecx)
     {
-        NFS2_ASSERT(false);
+        {
+            x86::reg16 tmp1 = app->getMemory<x86::reg16>(cpu.esi);
+            x86::reg16 tmp2 = x86::reg16(x86::sreg16(app->getMemory<x86::reg16>(cpu.ees + cpu.edi)));
+            x86::reg16 result = tmp1 - tmp2;
+            cpu.flags.cf = tmp1 < tmp2;
+            cpu.flags.of = 1 & (tmp1 >> 15);
+            cpu.flags.of ^= 1 & (result >> 15);
+            cpu.flags.of &= (1 & (tmp1 >> 15)) != (1 & (tmp2 >> 15));
+            cpu.set_szp(result);
+        }
+        if (cpu.flags.df)
+        {
+            cpu.edi -= 2;
+            cpu.esi -= 2;
+        }
+        else
+        {
+            cpu.edi += 2;
+            cpu.esi += 2;
+        }
         --cpu.ecx;
         if (!cpu.flags.zf)
             break;
@@ -6784,7 +6819,26 @@ L_0x004e2f63:
     // 004e2f71  f366a7                 +repe cmpsw word ptr [esi], word ptr es:[edi]
     while (cpu.ecx)
     {
-        NFS2_ASSERT(false);
+        {
+            x86::reg16 tmp1 = app->getMemory<x86::reg16>(cpu.esi);
+            x86::reg16 tmp2 = x86::reg16(x86::sreg16(app->getMemory<x86::reg16>(cpu.ees + cpu.edi)));
+            x86::reg16 result = tmp1 - tmp2;
+            cpu.flags.cf = tmp1 < tmp2;
+            cpu.flags.of = 1 & (tmp1 >> 15);
+            cpu.flags.of ^= 1 & (result >> 15);
+            cpu.flags.of &= (1 & (tmp1 >> 15)) != (1 & (tmp2 >> 15));
+            cpu.set_szp(result);
+        }
+        if (cpu.flags.df)
+        {
+            cpu.edi -= 2;
+            cpu.esi -= 2;
+        }
+        else
+        {
+            cpu.edi += 2;
+            cpu.esi += 2;
+        }
         --cpu.ecx;
         if (!cpu.flags.zf)
             break;
@@ -6943,7 +6997,15 @@ L_0x004e2fc5:
     cpu.esi = 5560144 /*0x54d750*/;
 L_0x004e2fe0:
     // 004e2fe0  ad                     -lodsd eax, dword ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.eax = app->getMemory<x86::reg32>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 4;
+    }
+    else
+    {
+        cpu.esi += 4;
+    }
     // 004e2fe1  85c0                   +test eax, eax
     cpu.clear_co();
     cpu.set_szp(static_cast<x86::reg32>(cpu.eax & cpu.eax));
@@ -6955,7 +7017,15 @@ L_0x004e2fe0:
     // 004e2fe5  891e                   -mov dword ptr [esi], ebx
     app->getMemory<x86::reg32>(cpu.esi) = cpu.ebx;
     // 004e2fe7  ad                     -lodsd eax, dword ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.eax = app->getMemory<x86::reg32>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 4;
+    }
+    else
+    {
+        cpu.esi += 4;
+    }
     // 004e2fe8  ebf6                   -jmp 0x4e2fe0
     goto L_0x004e2fe0;
 L_0x004e2fea:
@@ -7638,7 +7708,15 @@ L_0x004e31a0:
         goto L_0x004e31af;
     }
     // 004e31a5  ad                     -lodsd eax, dword ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.eax = app->getMemory<x86::reg32>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 4;
+    }
+    else
+    {
+        cpu.esi += 4;
+    }
     // 004e31a6  66ab                   -stosw word ptr es:[edi], ax
     app->getMemory<x86::reg16>(cpu.ees + cpu.edi) = cpu.ax;
     if (cpu.flags.df)
@@ -7717,7 +7795,16 @@ L_0x004e31c4:
     // 004e31c6  40                     -inc eax
     (cpu.eax)++;
     // 004e31c7  f00fc105e0d16f00       -lock xadd dword ptr [0x6fd1e0], eax
-    NFS2_ASSERT(false);
+    {
+        x86::reg32 previous = app->getMemory<x86::reg32>(x86::reg32(7328224) /* 0x6fd1e0 */);
+        x86::reg32 addend = cpu.eax;
+        x86::reg32 result = previous + addend;
+        cpu.flags.cf = result < previous;
+        cpu.flags.of = ((~(previous ^ addend) & (previous ^ result)) >> 31) & 1;
+        cpu.set_szp(result);
+        cpu.eax = previous;
+        app->getMemory<x86::reg32>(x86::reg32(7328224) /* 0x6fd1e0 */) = result;
+    }
     // 004e31cf  40                     -inc eax
     (cpu.eax)++;
     // 004e31d0  6880277a00             -push 0x7a2780

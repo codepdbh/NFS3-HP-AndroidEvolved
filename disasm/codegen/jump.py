@@ -89,3 +89,17 @@ cg_jpe = cg_jp
 def cg_jnp(instruction, function_bounds, function_names, destination):
     return ['if (!cpu.flags.pf)', '{', '    '+arguments.get_goto_address(instruction, function_bounds, function_names, destination), '}']
 cg_jpo = cg_jnp
+
+
+def cg_loop(instruction, function_bounds, function_names, destination):
+    return ['if (--cpu.ecx != 0)', '{', '    '+arguments.get_goto_address(instruction, function_bounds, function_names, destination), '}']
+
+
+def cg_loope(instruction, function_bounds, function_names, destination):
+    return ['if (--cpu.ecx != 0 && cpu.flags.zf)', '{', '    '+arguments.get_goto_address(instruction, function_bounds, function_names, destination), '}']
+cg_loopz = cg_loope
+
+
+def cg_loopne(instruction, function_bounds, function_names, destination):
+    return ['if (--cpu.ecx != 0 && !cpu.flags.zf)', '{', '    '+arguments.get_goto_address(instruction, function_bounds, function_names, destination), '}']
+cg_loopnz = cg_loopne

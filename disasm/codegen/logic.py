@@ -263,3 +263,43 @@ def cg_bsf(instruction, function_bounds, function_names, destination, source):
                                                          destination.size * 8,
                                                          arguments.get_value(instruction, source)),
             '}']
+
+
+def _bit_test(instruction, base, offset, update):
+    """bt/bts/btr/btc: CF = selected bit, then optionally update it.
+
+    With a register offset and a memory base the offset addresses a bit string
+    and may reach outside the operand, so the address is adjusted as on x86.
+    """
+    bits = base.size * 8
+    offset_value = arguments.get_value(instruction, offset)
+    if base.type == x86.X86_OP_MEM and offset.type == x86.X86_OP_REG:
+        expression = arguments.get_value(instruction, base)
+        address = expression[expression.index('(') + 1:-1]
+        target = 'app->getMemory<x86::reg%d>(%s + x86::reg32((x86::sreg%d(%s) >> %d) * %d))' % (
+            bits, address, offset.size * 8, offset_value, {16: 4, 32: 5}[bits], base.size)
+    else:
+        target = arguments.get_value(instruction, base)
+    code = ['{',
+            '    x86::reg%d mask = x86::reg%d(1) << (x86::reg32(%s) & %d);' % (bits, bits, offset_value, bits - 1),
+            '    x86::reg%d value = %s;' % (bits, target),
+            '    cpu.flags.cf = (value & mask) != 0;']
+    if update:
+        code.append('    %s = x86::reg%d(%s);' % (target, bits, update))
+    return code + ['}']
+
+
+def cg_bt(instruction, function_bounds, function_names, base, offset):
+    return _bit_test(instruction, base, offset, None)
+
+
+def cg_bts(instruction, function_bounds, function_names, base, offset):
+    return _bit_test(instruction, base, offset, 'value | mask')
+
+
+def cg_btr(instruction, function_bounds, function_names, base, offset):
+    return _bit_test(instruction, base, offset, 'value & ~mask')
+
+
+def cg_btc(instruction, function_bounds, function_names, base, offset):
+    return _bit_test(instruction, base, offset, 'value ^ mask')

@@ -8577,13 +8577,13 @@ start:
     // 0043f7cf  0011                   -add byte ptr [ecx], dl
     (app->getMemory<x86::reg8>(cpu.ecx)) += x86::reg8(x86::sreg8(cpu.dl));
     // 0043f7d1  f9                     -stc 
-    NFS2_ASSERT(false);
+    cpu.flags.cf = 1;
     // 0043f7d2  43                     -inc ebx
     (cpu.ebx)++;
     // 0043f7d3  002df943001b           -add byte ptr [0x1b0043f9], ch
     (app->getMemory<x86::reg8>(x86::reg32(453002233) /* 0x1b0043f9 */)) += x86::reg8(x86::sreg8(cpu.ch));
     // 0043f7d9  f9                     -stc 
-    NFS2_ASSERT(false);
+    cpu.flags.cf = 1;
     // 0043f7da  43                     -inc ebx
     (cpu.ebx)++;
     // 0043f7db  0025f9430053           -add byte ptr [0x530043f9], ah

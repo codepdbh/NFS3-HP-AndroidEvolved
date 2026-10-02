@@ -268,3 +268,37 @@ def cg_fscale(instruction, function_bounds, function_names):
 def cg_f2xm1(instruction, function_bounds, function_names):
     return ['cpu.fpu.st(0) = cpu.fpu.f2xm1(cpu.fpu.st(0));']
 
+
+
+def _integer(instruction, value):
+    return 'x86::Float(double(x86::sreg%d(%s)))' % (value.size * 8, arguments.get_value(instruction, value))
+
+
+def cg_fiadd(instruction, function_bounds, function_names, value):
+    return ['cpu.fpu.st(0) += %s;' % _integer(instruction, value)]
+
+
+def cg_fisub(instruction, function_bounds, function_names, value):
+    return ['cpu.fpu.st(0) -= %s;' % _integer(instruction, value)]
+
+
+def cg_fisubr(instruction, function_bounds, function_names, value):
+    return ['cpu.fpu.st(0) = %s - cpu.fpu.st(0);' % _integer(instruction, value)]
+
+
+def cg_fimul(instruction, function_bounds, function_names, value):
+    return ['cpu.fpu.st(0) *= %s;' % _integer(instruction, value)]
+
+
+def cg_fidiv(instruction, function_bounds, function_names, value):
+    return ['cpu.fpu.st(0) /= %s;' % _integer(instruction, value)]
+
+
+def cg_fidivr(instruction, function_bounds, function_names, value):
+    return ['cpu.fpu.st(0) = %s / cpu.fpu.st(0);' % _integer(instruction, value)]
+
+
+def cg_fist(instruction, function_bounds, function_names, destination):
+    return ['%s = x86::reg%d(x86::sreg%s(cpu.fpu.rndint()));' % (arguments.get_value(instruction, destination),
+                                                              destination.size * 8,
+                                                              destination.size * 8)]

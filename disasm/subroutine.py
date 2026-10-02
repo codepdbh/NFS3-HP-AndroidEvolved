@@ -132,7 +132,7 @@ class Subroutine:
                     dest = self.application.get_dword(vtable)
                     vtable_size += 1
                 #print('found vtable 0x%08x - %d' % (instruction.operands[0].mem.disp, vtable_size))
-        if instruction.mnemonic[0] == 'j':
+        if instruction.mnemonic[0] == 'j' or instruction.mnemonic.startswith('loop'):
             if instruction.operands[0].type == x86.X86_OP_IMM:
                 dest = instruction.operands[0].imm
                 self.static_labels.append((instruction.address, dest))

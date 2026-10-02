@@ -1026,7 +1026,15 @@ void Application::sub_4f93b6(WinApplication* app, x86::CPU& cpu)
     cpu.eax ^= x86::reg32(x86::sreg32(cpu.eax));
 L_0x004f93bb:
     // 004f93bb  ac                     -lodsb al, byte ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.al = app->getMemory<x86::reg8>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 1;
+    }
+    else
+    {
+        cpu.esi += 1;
+    }
     // 004f93bc  aa                     -stosb byte ptr es:[edi], al
     app->getMemory<x86::reg8>(cpu.ees + cpu.edi) = cpu.al;
     if (cpu.flags.df)
@@ -1075,7 +1083,15 @@ L_entry_0x004f93b8:
     cpu.eax ^= x86::reg32(x86::sreg32(cpu.eax));
 L_0x004f93bb:
     // 004f93bb  ac                     -lodsb al, byte ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.al = app->getMemory<x86::reg8>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 1;
+    }
+    else
+    {
+        cpu.esi += 1;
+    }
     // 004f93bc  aa                     -stosb byte ptr es:[edi], al
     app->getMemory<x86::reg8>(cpu.ees + cpu.edi) = cpu.al;
     if (cpu.flags.df)
@@ -1122,7 +1138,15 @@ void Application::sub_4f93c6(WinApplication* app, x86::CPU& cpu)
     cpu.eax ^= x86::reg32(x86::sreg32(cpu.eax));
 L_0x004f93cb:
     // 004f93cb  ac                     -lodsb al, byte ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.al = app->getMemory<x86::reg8>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 1;
+    }
+    else
+    {
+        cpu.esi += 1;
+    }
     // 004f93cc  e80f77ffff             -call 0x4f0ae0
     cpu.esp -= 4;
     sub_4f0ae0(app, cpu);
@@ -1175,7 +1199,15 @@ L_entry_0x004f93c8:
     cpu.eax ^= x86::reg32(x86::sreg32(cpu.eax));
 L_0x004f93cb:
     // 004f93cb  ac                     -lodsb al, byte ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.al = app->getMemory<x86::reg8>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 1;
+    }
+    else
+    {
+        cpu.esi += 1;
+    }
     // 004f93cc  e80f77ffff             -call 0x4f0ae0
     cpu.esp -= 4;
     sub_4f0ae0(app, cpu);
@@ -1301,7 +1333,15 @@ L_0x004f93ef:
         goto L_0x004f93fc;
     }
     // 004f93f1  ac                     -lodsb al, byte ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.al = app->getMemory<x86::reg8>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 1;
+    }
+    else
+    {
+        cpu.esi += 1;
+    }
     // 004f93f2  aa                     -stosb byte ptr es:[edi], al
     app->getMemory<x86::reg8>(cpu.ees + cpu.edi) = cpu.al;
     if (cpu.flags.df)
@@ -1367,7 +1407,15 @@ L_0x004f93ef:
         goto L_0x004f93fc;
     }
     // 004f93f1  ac                     -lodsb al, byte ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.al = app->getMemory<x86::reg8>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 1;
+    }
+    else
+    {
+        cpu.esi += 1;
+    }
     // 004f93f2  aa                     -stosb byte ptr es:[edi], al
     app->getMemory<x86::reg8>(cpu.ees + cpu.edi) = cpu.al;
     if (cpu.flags.df)
@@ -1431,7 +1479,15 @@ L_0x004f9403:
         goto L_0x004f9415;
     }
     // 004f9405  ac                     -lodsb al, byte ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.al = app->getMemory<x86::reg8>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 1;
+    }
+    else
+    {
+        cpu.esi += 1;
+    }
     // 004f9406  e8d576ffff             -call 0x4f0ae0
     cpu.esp -= 4;
     sub_4f0ae0(app, cpu);
@@ -1501,7 +1557,15 @@ L_0x004f9403:
         goto L_0x004f9415;
     }
     // 004f9405  ac                     -lodsb al, byte ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.al = app->getMemory<x86::reg8>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 1;
+    }
+    else
+    {
+        cpu.esi += 1;
+    }
     // 004f9406  e8d576ffff             -call 0x4f0ae0
     cpu.esp -= 4;
     sub_4f0ae0(app, cpu);
@@ -1597,7 +1661,15 @@ L_0x004f9427:
         goto L_0x004f9439;
     }
     // 004f9429  ac                     -lodsb al, byte ptr [esi]
-    NFS2_ASSERT(false);
+    cpu.al = app->getMemory<x86::reg8>(cpu.esi);
+    if (cpu.flags.df)
+    {
+        cpu.esi -= 1;
+    }
+    else
+    {
+        cpu.esi += 1;
+    }
     // 004f942a  e8b159ffff             -call 0x4eede0
     cpu.esp -= 4;
     sub_4eede0(app, cpu);

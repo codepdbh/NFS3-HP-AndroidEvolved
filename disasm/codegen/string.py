@@ -48,15 +48,33 @@ cg_scasw = cg_scas
 cg_scasd = cg_scas
 
 
-def cg_cmpsb(instruction, function_bounds, function_names, esi, edi):
+def cg_cmps(instruction, function_bounds, function_names, esi, edi):
     return condition.cg_cmp(instruction, function_bounds, function_names, esi, edi) + [
             'if (cpu.flags.df)',
             '{',
-            '    cpu.edi -= 1;',
-            '    cpu.esi -= 1;',
+            '    cpu.edi -= %d;' % esi.size,
+            '    cpu.esi -= %d;' % esi.size,
             '}',
             'else',
             '{',
-            '    cpu.edi += 1;',
-            '    cpu.esi += 1;',
+            '    cpu.edi += %d;' % esi.size,
+            '    cpu.esi += %d;' % esi.size,
             '}']
+cg_cmpsb = cg_cmps
+cg_cmpsw = cg_cmps
+cg_cmpsd = cg_cmps
+
+
+def cg_lods(instruction, function_bounds, function_names, eax, esi):
+    return ['%s = %s;' % (arguments.get_value(instruction, eax), arguments.get_value(instruction, esi)),
+            'if (cpu.flags.df)',
+            '{',
+            '    cpu.esi -= %d;' % eax.size,
+            '}',
+            'else',
+            '{',
+            '    cpu.esi += %d;' % eax.size,
+            '}']
+cg_lodsb = cg_lods
+cg_lodsw = cg_lods
+cg_lodsd = cg_lods

@@ -271,3 +271,22 @@ def cg_clc(instruction, function_bounds, function_names):
 def cg_cmc(instruction, function_bounds, function_names):
     return ['cpu.flags.cf ^= 1;']
 
+
+
+def cg_stc(instruction, function_bounds, function_names):
+    return ['cpu.flags.cf = 1;']
+
+
+def cg_xadd(instruction, function_bounds, function_names, destination, operand):
+    # Exchange then add: the source register receives the old destination.
+    bits = destination.size * 8
+    return ['{',
+            '    x86::reg%d previous = %s;' % (bits, arguments.get_value(instruction, destination)),
+            '    x86::reg%d addend = %s;' % (bits, arguments.get_value(instruction, operand)),
+            '    x86::reg%d result = previous + addend;' % bits,
+            '    cpu.flags.cf = result < previous;',
+            '    cpu.flags.of = ((~(previous ^ addend) & (previous ^ result)) >> %d) & 1;' % (bits - 1),
+            '    cpu.set_szp(result);',
+            '    %s = previous;' % arguments.get_value(instruction, operand),
+            '    %s = result;' % arguments.get_value(instruction, destination),
+            '}']

@@ -17,6 +17,25 @@ def cg_setnbe(instruction, function_bounds, function_names, destination):
 cg_seta = cg_setnbe
 
 
+def _setcc(condition_expression):
+    def generate(instruction, function_bounds, function_names, destination):
+        return ['%s = (%s) ? 1 : 0;' % (arguments.get_value(instruction, destination), condition_expression)]
+    return generate
+
+
+cg_setb = cg_setc = cg_setnae = _setcc('cpu.flags.cf')
+cg_setae = cg_setnb = cg_setnc = _setcc('!cpu.flags.cf')
+cg_setbe = cg_setna = _setcc('cpu.flags.cf || cpu.flags.zf')
+cg_setl = cg_setnge = _setcc('cpu.flags.sf != cpu.flags.of')
+cg_setge = cg_setnl = _setcc('cpu.flags.sf == cpu.flags.of')
+cg_setle = cg_setng = _setcc('cpu.flags.zf || cpu.flags.sf != cpu.flags.of')
+cg_setg = cg_setnle = _setcc('!cpu.flags.zf && cpu.flags.sf == cpu.flags.of')
+cg_sets = _setcc('cpu.flags.sf')
+cg_setns = _setcc('!cpu.flags.sf')
+cg_seto = _setcc('cpu.flags.of')
+cg_setno = _setcc('!cpu.flags.of')
+
+
 def cg_test(instruction, function_bounds, function_names, destination, operand):
     return ['cpu.clear_co();',
             'cpu.set_szp(static_cast<x86::reg%s>(%s & %s));' % (destination.size*8,
