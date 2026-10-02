@@ -435,7 +435,10 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
         }
         padUp = edge(padUp, hatY < -0.5f, KeyEvent.KEYCODE_DPAD_UP);
         padDown = edge(padDown, hatY > 0.5f, KeyEvent.KEYCODE_DPAD_DOWN);
-        controls.setGamepadMode(true);
+        // Only deliberate use hides the touch controls again; a loose stick drifts.
+        if (Math.abs(padStickSteer) > 0.3f || padDpadSteer != 0f || gas > 0.3f || brake > 0.3f
+                || Math.abs(hatY) > 0.5f)
+            controls.setGamepadMode(true);
         return true;
     }
 

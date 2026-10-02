@@ -376,6 +376,11 @@ final class TouchControlsView extends View implements SensorEventListener {
         if (editing) return onEditTouch(event);
         int action = event.getActionMasked();
         int index = event.getActionIndex();
+        if (action == MotionEvent.ACTION_DOWN && gamepadMode) {
+            // Touching the screen brings the controls back; using the pad hides them.
+            gamepadMode = false;
+            applySettings();
+        }
         switch (action) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN: {

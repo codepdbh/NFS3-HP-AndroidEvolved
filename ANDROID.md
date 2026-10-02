@@ -142,8 +142,12 @@ respuesta, zona muerta, opacidad, tamaño, vibración, modo zurdo, marchas manua
 NFS3 solo entiende dirección digital, así que el giro analógico se convierte en
 pulsaciones moduladas: cuanto más giras, más tiempo se mantiene la flecha.
 
-**Mando físico**: RT gas, LT freno (progresivos), stick/cruceta dirección, A OK,
-B volver, X freno de mano, Y cámara, LB/RB marcha −/+, Start pausa, Select bocina.
+**Mando físico (Bluetooth o USB)**: RT gas, LT freno (progresivos), stick/cruceta
+dirección, A OK, B volver, X freno de mano, Y cámara, LB/RB marcha −/+, Start pausa,
+Select bocina. Al conectarlo se ocultan los controles táctiles; tocar la pantalla los
+muestra y volver a usar el mando los oculta. El juego no ve joysticks: los mandos se
+traducen a teclado (algunos móviles anuncian piezas internas, como el lector de
+huellas de Xiaomi, como joystick, y NFS3 se lo asignaría al jugador 1).
 
 El ratón de DirectInput (que usa NFS3 en los menús) se alimenta de los toques; cada
 toque recoloca el cursor llevándolo primero a la esquina y luego a la posición.
