@@ -12,7 +12,7 @@ try {
     if (!$env:JAVA_HOME -and (Test-Path 'C:/Program Files/Android/Android Studio/jbr')) {
         $env:JAVA_HOME = 'C:/Program Files/Android/Android Studio/jbr'
     }
-    & ./android/gradlew.bat -p android assembleDebug --console=plain
+    & ./android/gradlew.bat -p android assembleRelease --console=plain
     if ($LASTEXITCODE -ne 0) { throw 'APK build failed' }
-    Write-Output 'APK: android/app/build/outputs/apk/debug/app-debug.apk'
+    Write-Output 'APK: android/app/build/outputs/apk/release/app-release.apk'
 } finally { Pop-Location }

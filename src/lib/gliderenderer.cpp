@@ -4,10 +4,20 @@
 #include <SDL_render.h>
 #include <SDL_video.h>
 #include <SDL_log.h>
+#include <SDL_timer.h>
 #include <lib/gl_api.h>
+#include <algorithm>
+#include <atomic>
 
 namespace win32
 {
+
+#ifdef __ANDROID__
+// Triangles in the last presented 3D frame and when it was presented; the Java
+// overlay uses this to tell a race (thousands of triangles) from the 2D menus.
+static std::atomic<int> s_lastFrameTriangles{0};
+static std::atomic<uint32_t> s_lastFrameTicks{0};
+#endif
 
 #ifndef __ANDROID__
 static PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate;
@@ -362,9 +372,15 @@ void GlideRenderer::swap()
     glEnable(GL_BLEND);
     glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_renderer->m_texture, 0);
+#ifdef __ANDROID__
+    // The activity pins the surface to 60 Hz; deriving the interval from the
+    // nominal 120 Hz mode gave 30 fps whenever the panel dropped to 60 Hz.
+    setSwapInterval(1);
+#else
     SDL_DisplayMode mode;
     SDL_GetCurrentDisplayMode(0, &mode);
     SDL_GL_SetSwapInterval(mode.refresh_rate / 60);
+#endif
     if (m_vertexCount)
     {
         flush();
@@ -418,14 +434,22 @@ void GlideRenderer::swap()
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glUseProgram(0);
+#ifndef NDEBUG
     const GLenum error = glGetError();
     if (error != GL_NO_ERROR) SDL_LogError(SDL_LOG_CATEGORY_RENDER, "[NFS3][GLIDE] Draw error 0x%x", error);
+#endif
+#ifndef __ANDROID__
     glFlush();
+#endif
     glBindTexture(GL_TEXTURE_2D, m_renderer->m_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     m_renderer->present();
     m_renderer->clearCurrent();
+#ifdef __ANDROID__
+    s_lastFrameTriangles.store(int(m_vertexCount / 3));
+    s_lastFrameTicks.store(SDL_GetTicks());
+#endif
     m_vertexCount = 0;
 }
 
@@ -551,13 +575,10 @@ void GlideRenderer::setTextureData(x86::reg32 tmu, x86::reg32 address, const voi
             }
         }
 #ifdef __ANDROID__
-        std::vector<uint8_t> rgba(largeMipmapSize*largeMipmapSize*4);
-        for (size_t i=0; i<rgba.size()/4; ++i) {
-            const uint32_t c=textureData[i];
-            rgba[i*4]=uint8_t(c>>24); rgba[i*4+1]=uint8_t(c>>16);
-            rgba[i*4+2]=uint8_t(c>>8); rgba[i*4+3]=uint8_t(c);
-        }
-        glTexSubImage2D(GL_TEXTURE_2D,lod,x,y,largeMipmapSize,largeMipmapSize,GL_RGBA,GL_UNSIGNED_BYTE,rgba.data());
+        // GLES has no GL_UNSIGNED_INT_8_8_8_8: byte-swap RRGGBBAA in place to RGBA bytes.
+        for (x86::reg32 i = 0; i < largeMipmapSize*largeMipmapSize; ++i)
+            textureData[i] = __builtin_bswap32(textureData[i]);
+        glTexSubImage2D(GL_TEXTURE_2D, lod, x, y, largeMipmapSize, largeMipmapSize, GL_RGBA, GL_UNSIGNED_BYTE, textureData);
 #else
         glTexSubImage2D(GL_TEXTURE_2D, lod, x, y, largeMipmapSize, largeMipmapSize, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, textureData);
 #endif
@@ -642,3 +663,14 @@ void GlideRenderer::drawTriangle(const GrVertex* a, const GrVertex* b, const GrV
 }
 
 }
+
+#ifdef __ANDROID__
+#include <jni.h>
+/** Triangles drawn in the last 3D frame, or 0 if no 3D frame was shown in the last half second. */
+extern "C" JNIEXPORT jint JNICALL
+Java_com_nfsrecompiled_nfs3hp_NFS3Activity_nativeGetFrameTriangles(JNIEnv*, jclass)
+{
+    if (SDL_GetTicks() - win32::s_lastFrameTicks.load() > 500) return 0;
+    return win32::s_lastFrameTriangles.load();
+}
+#endif

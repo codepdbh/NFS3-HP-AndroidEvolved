@@ -1,13 +1,73 @@
 #include <lib/gamepad.h>
 #include <SDL_events.h>
 #include <SDL_log.h>
+#include <SDL_timer.h>
 #include <algorithm>
+#include <deque>
+#include <mutex>
 
 
 namespace win32
 {
 
 static x86::reg32 s_kbPoll = 3;
+
+static std::mutex s_mouseLock;
+static std::deque<MouseEvent> s_mouseEvents;
+static int s_mouseX = 0, s_mouseY = 0;
+static bool s_mouseKnown = false;
+static x86::sreg32 s_mouseDx = 0, s_mouseDy = 0;
+static x86::reg8 s_mouseButtons[4] = {};
+
+static void pushMouseEvent(x86::reg32 offset, x86::reg32 data)
+{
+    if (s_mouseEvents.size() >= 256) s_mouseEvents.pop_front();
+    s_mouseEvents.push_back({offset, data, SDL_GetTicks()});
+}
+
+void Mouse::moveTo(int x, int y, bool snap)
+{
+    std::lock_guard<std::mutex> lock(s_mouseLock);
+    if (snap || !s_mouseKnown)
+    {
+        // Far beyond any screen: the game clamps its cursor to the top-left corner.
+        const x86::sreg32 home = -8192;
+        pushMouseEvent(OFFSET_X, x86::reg32(home));
+        pushMouseEvent(OFFSET_Y, x86::reg32(home));
+        s_mouseDx += home; s_mouseDy += home;
+        s_mouseX = 0; s_mouseY = 0;
+        s_mouseKnown = true;
+    }
+    const x86::sreg32 dx = x - s_mouseX, dy = y - s_mouseY;
+    if (dx) { pushMouseEvent(OFFSET_X, x86::reg32(dx)); s_mouseDx += dx; }
+    if (dy) { pushMouseEvent(OFFSET_Y, x86::reg32(dy)); s_mouseDy += dy; }
+    s_mouseX = x; s_mouseY = y;
+}
+
+void Mouse::button(int index, bool down)
+{
+    if (index < 0 || index > 3) return;
+    std::lock_guard<std::mutex> lock(s_mouseLock);
+    s_mouseButtons[index] = down ? 0x80 : 0x00;
+    pushMouseEvent(OFFSET_BUTTON0 + index, down ? 0x80 : 0x00);
+}
+
+bool Mouse::pop(MouseEvent& event)
+{
+    std::lock_guard<std::mutex> lock(s_mouseLock);
+    if (s_mouseEvents.empty()) return false;
+    event = s_mouseEvents.front();
+    s_mouseEvents.pop_front();
+    return true;
+}
+
+void Mouse::takeState(x86::sreg32& dx, x86::sreg32& dy, x86::reg8 buttons[4])
+{
+    std::lock_guard<std::mutex> lock(s_mouseLock);
+    dx = s_mouseDx; dy = s_mouseDy;
+    s_mouseDx = s_mouseDy = 0;
+    memcpy(buttons, s_mouseButtons, 4);
+}
 
 static GamepadState s_state;
 static Gamepad* s_gp1;
@@ -54,7 +114,9 @@ void Gamepad::updateKeys()
         }
         else
         {
+#ifndef NDEBUG
             SDL_Log("Ignoring event poll");
+#endif
             SDL_Event event;
             for (x86::reg32 button = 0; button < 64; ++button)
             {

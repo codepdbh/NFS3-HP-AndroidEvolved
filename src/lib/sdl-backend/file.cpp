@@ -134,6 +134,13 @@ static std::string resolvePathCaseInsensitive(const std::string& path)
     return resolved;
 }
 
+std::string File::hostPath(const char* path)
+{
+    std::string result = moveToRoot(path);
+    std::replace(result.begin(), result.end(), '\\', '/');
+    return resolvePathCaseInsensitive(result);
+}
+
 FileEnumerator::FileEnumerator(const char* filename)
     :   m_pattern(moveToRoot(filename))
     ,   m_index(-1)

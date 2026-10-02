@@ -243,6 +243,35 @@ BOOL WriteFile(WinApplication* app, x86::CPU& cpu,
 HFILE _lclose(WinApplication* app, x86::CPU& cpu, HFILE hFile);
 HFILE _lopen(WinApplication* app, x86::CPU& cpu, LPCSTR lpPathName, int iReadWrite);
 
+// Added for the NFS3 Modern Patch executable (kernel32_ext.cpp).
+HANDLE GetProcessHeap(WinApplication* app, x86::CPU& cpu);
+x86::reg32 HeapAlloc(WinApplication* app, x86::CPU& cpu,
+                     HANDLE hHeap, DWORD dwFlags, SIZE_T dwBytes);
+BOOL HeapFree(WinApplication* app, x86::CPU& cpu,
+              HANDLE hHeap, DWORD dwFlags, Packed<void> lpMem);
+x86::reg32 HeapReAlloc(WinApplication* app, x86::CPU& cpu,
+                       HANDLE hHeap, DWORD dwFlags, Packed<void> lpMem, SIZE_T dwBytes);
+SIZE_T HeapSize(WinApplication* app, x86::CPU& cpu,
+                HANDLE hHeap, DWORD dwFlags, Packed<const void> lpMem);
+DWORD GetPrivateProfileStringA(WinApplication* app, x86::CPU& cpu,
+                               LPCSTR lpAppName, LPCSTR lpKeyName, LPCSTR lpDefault,
+                               LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName);
+UINT GetPrivateProfileIntA(WinApplication* app, x86::CPU& cpu,
+                           LPCSTR lpAppName, LPCSTR lpKeyName, x86::sreg32 nDefault, LPCSTR lpFileName);
+DWORD GetPrivateProfileSectionA(WinApplication* app, x86::CPU& cpu,
+                                LPCSTR lpAppName, LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName);
+HANDLE FindResourceA(WinApplication* app, x86::CPU& cpu,
+                     HMODULE hModule, Packed<const char> lpName, Packed<const char> lpType);
+HANDLE LoadResource(WinApplication* app, x86::CPU& cpu,
+                    HMODULE hModule, HANDLE hResInfo);
+x86::reg32 LockResource(WinApplication* app, x86::CPU& cpu,
+                        HANDLE hResData);
+DWORD SizeofResource(WinApplication* app, x86::CPU& cpu,
+                     HMODULE hModule, HANDLE hResInfo);
+
+/** Guest address of the executable's .rsrc section, for FindResourceA. */
+void setResourceSection(x86::reg32 address);
+
 }}
 
 #endif

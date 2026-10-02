@@ -31,14 +31,18 @@ Linux / WSL (configura `ANDROID_HOME` y `JAVA_HOME`):
 bash scripts/build-android.sh
 ```
 
-APK: `android/app/build/outputs/apk/debug/app-debug.apk`.
-Se compila C++17, Debug, `arm64-v8a`, OpenGL ES 3 y `BUILD_NFS2=OFF`.
+APK: `android/app/build/outputs/apk/release/app-release.apk`.
+Se compila C++17, **Release (`-O2`)**, `arm64-v8a`, OpenGL ES 3 y `BUILD_NFS2=OFF`,
+firmado con la clave de depuración para poder instalarlo encima del APK anterior.
+No juegues con `assembleDebug`: el código recompilado depende de que cada acceso
+a la memoria del juego se optimice, y en `-O0` corre varias veces más lento.
+El APK Debug sigue disponible (`gradlew -p android assembleDebug`) para depurar.
 Las fuentes generadas existentes se usan directamente.
 
 ## Instalar y copiar datos
 
 ```bash
-adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+adb install -r android/app/build/outputs/apk/release/app-release.apk
 adb shell am start -n com.nfsrecompiled.nfs3hp/.LauncherActivity
 ```
 
@@ -79,27 +83,70 @@ python scripts/make-install-win.py /ruta/al/juego
 python scripts/copy-game-data.py /ruta/al/juego
 ```
 
-El segundo script requiere el APK Debug y ADB. Admite `--adb /ruta/a/adb`.
+El segundo script usa `run-as` como alternativa, que solo funciona con el APK Debug; con el
+Release copia los datos con un explorador de archivos o `adb push`. Requiere ADB. Admite `--adb /ruta/a/adb`.
 No sobrescribas tus partidas sin guardar antes una copia de seguridad.
+
+## Inicio, idioma y pantalla
+
+Antes de arrancar, el launcher muestra un menú para elegir **idioma** (escribe la
+primera línea de `install.win`, que es la que lee el juego; solo se activan los
+idiomas cuyo `fedata/text/text.*` existe) y **pantalla**: Original 4:3,
+Panorámica 16:9 o Completa (estira la imagen al tamaño del móvil).
+
+## NFS3 Modern Patch
+
+Por defecto se compila el **NFS3 Modern Patch v1.6.1** (VEG), recompilado igual que
+el juego original: `nfs3hp_modern/nfs3.exe` →
+`python disassemble_nfs3hp_modern.py` → `src/nfs3hp/disassembly_modern/`.
+`gradlew assembleRelease -PoriginalExe` compila el ejecutable original.
+
+* El parche modifica el `.exe` en el sitio, así que valen las pistas del original;
+  las DLL suben 0x21000 y el script ajusta sus pistas. Veg reutilizó zonas de datos
+  para código nuevo y vació funciones con `nop`; las zonas afectadas están listadas
+  y comentadas en el script.
+* Se usa el `voodoo2a.dll` **original** (Glide 2). El del parche usa Glide 3, que
+  este runtime no implementa; el `.exe` habla con el driver por `THRASH_*`.
+* Funciones añadidas para el parche: heap del proceso, `GetPrivateProfile*`
+  (`nfs3.ini`, `thrash.ini`), recursos PE, `timeGetTime` y `PlaySoundA`.
+* **Panorámica real**: con el modo Completa o 16:9, Glide ensancha las resoluciones
+  de carrera a la proporción de la pantalla y el parche adapta campo de visión y
+  HUD, como con nGlide a resolución de escritorio. 640×480 (menús) no cambia, así
+  que elige 800×600 o más en Opciones → Gráficos. Activa también *Wide Screen* /
+  *View Angle* en Gráficos avanzados si quieres más campo de visión.
+
+Datos: el parche necesita sus propios menús, textos, HUD y logos. Cópialos desde la
+carpeta del parche (guarda en el móvil una copia de lo que reemplaza):
+
+```bash
+python scripts/copy-modern-patch-data.py /ruta/al/ModernPatch
+```
+
+El launcher crea `nfs3.ini` y `drivers/nglide/thrash.ini` si faltan y escribe el
+idioma elegido en `nfs3.ini` (`Language=`) además de en `install.win`.
 
 ## Controles
 
-La app permanece horizontal. El contenido conserva la proporción original 4:3.
+* **Menús**: táctiles. Toca las opciones directamente; el gesto o botón **Atrás**
+  de Android equivale a Esc (volver, pausar y **saltar cinemáticas**). Solo se ve
+  el botón ⚙ de ajustes.
+* **Carrera**: los controles aparecen solos al empezar (el menú del juego corre
+  a 640×480 y la carrera a su propia resolución con miles de triángulos).
+  Joystick a la izquierda (giro proporcional), GAS / FRENO / MANO a la derecha y
+  bocina, cámara y pausa bajo el HUD. Los dedos pueden deslizarse entre botones.
 
-| Botón | Entrada |
-|---|---|
-| SALTAR / OK | Enter: saltar cinemática y confirmar |
-| VOLVER | Escape |
-| ◀ / ▶ | Flechas izquierda / derecha |
-| GAS / FRENO | Flechas arriba / abajo; también navegación del menú |
-| MANO | Espacio |
-| PAUSA | Escape: men? de pausa durante la carrera |
-| CÁMARA | C |
-| BOCINA | H |
+Otros modos de dirección (⚙): Botones, Deslizar e Inclinación. También: curva de
+respuesta, zona muerta, opacidad, tamaño, vibración, modo zurdo, marchas manuales
+(A / Z) y un editor para mover y redimensionar cada botón.
 
-Los controles envían teclas a SDL, permiten mantener pulsaciones y liberan las
-teclas al poner la app en segundo plano. Los mandos usan el backend SDL existente;
-la asignación de cada mando necesita validación y puede ajustarse en el juego.
+NFS3 solo entiende dirección digital, así que el giro analógico se convierte en
+pulsaciones moduladas: cuanto más giras, más tiempo se mantiene la flecha.
+
+**Mando físico**: RT gas, LT freno (progresivos), stick/cruceta dirección, A OK,
+B volver, X freno de mano, Y cámara, LB/RB marcha −/+, Start pausa, Select bocina.
+
+El ratón de DirectInput (que usa NFS3 en los menús) se alimenta de los toques; cada
+toque recoloca el cursor llevándolo primero a la esquina y luego a la posición.
 
 ## Diagnóstico y estado comprobado
 

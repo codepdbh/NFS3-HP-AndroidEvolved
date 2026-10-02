@@ -13,6 +13,9 @@ nfs3hp/*.exe
 nfs3hp/*.dll
 nfs3hp/fedata/
 nfs3hp/gamedata/
+nfs3hp_modern/*.exe
+nfs3hp_modern/*.dll
+build-modern-disasm/
 .vscode
 **/*.pyc
 

@@ -473,6 +473,12 @@ static x86::reg32 grSstWinOpen(WinApplication* app, x86::CPU& cpu, HWND hWnd,
         height = 480;
         break;
     }
+    {
+        int wide = width, tall = height;
+        Window::widenRenderSize(wide, tall);
+        if (wide != width) SDL_Log("[NFS3][GLIDE] Widescreen %dx%d -> %dx%d", width, height, wide, tall);
+        width = wide; height = tall;
+    }
     s_renderer = new Renderer(app, dynamic_cast<Window*>(app->getResource(hWnd)));
     s_renderer->setVideoMode(width, height, 16);
     app->allocateResource(s_renderer);
@@ -498,18 +504,24 @@ static void grSstWinClose(WinApplication* app, x86::CPU& cpu)
     }
 }
 
+// There is no real retrace to wait for. Alternate the flag on every query so that
+// both "wait until retrace" and "wait until retrace ends" loops terminate; a
+// constant value made the in-race Graphics menu spin forever.
+static x86::reg32 s_retracePhase = 0;
+
 static x86::reg32 grSstStatus(WinApplication* app, x86::CPU& cpu)
 {
     NFS2_USE(app);
     NFS2_USE(cpu);
-    return 0x0fff03f;
+    // Idle, FIFO free; bit 6 is the vertical retrace flag.
+    return 0x0fff03f | ((++s_retracePhase & 1) << 6);
 }
 
 static x86::reg32 grSstVRetraceOn(WinApplication* app, x86::CPU& cpu)
 {
     NFS2_USE(app);
     NFS2_USE(cpu);
-    return 0;
+    return ++s_retracePhase & 1;
 }
 
 static void grSstIdle(WinApplication* app, x86::CPU& cpu)

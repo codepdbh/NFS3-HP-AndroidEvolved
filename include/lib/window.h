@@ -31,6 +31,12 @@ public:
     static x86::reg32 postMessage(x86::reg32 hWnd, x86::reg32 message, x86::reg32 wParam, x86::reg32 lParam);
     static x86::reg32 getMessageHandler();
     static void setRenderSize(int width, int height);
+    static void setDisplayAspect(float aspect);
+    static int getRenderWidth();
+    /** Lets Glide widen race resolutions to the screen's aspect (Modern Patch only). */
+    static void setWideRenderAllowed(bool allowed);
+    static void widenRenderSize(int& width, int& height);
+    static void getViewport(int width, int height, float& left, float& top, float& scaleX, float& scaleY);
     static bool setCursorPosition(int x, int y);
 
 private:

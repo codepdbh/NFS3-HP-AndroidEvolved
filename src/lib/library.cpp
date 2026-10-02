@@ -37,6 +37,9 @@ void Library::registerSymbols(WinApplication *app)
 
 Library* Library::findLibrary(std::string name)
 {
+    // The Modern Patch loads its thrash driver by path (drivers/nglide/voodoo2a.dll).
+    const auto slash = name.find_last_of("\\/");
+    if (slash != std::string::npos) name = name.substr(slash + 1);
     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
     for (Library* l = s_libraries; l; l = l->m_next)
     {

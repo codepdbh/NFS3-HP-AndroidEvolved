@@ -12,7 +12,9 @@
 namespace win32
 {
 
-static const x86::reg32 s_simulatedMemory = 64*1024*1024;
+// Room for the game's own allocations plus the Modern Patch heap (up to
+// OwnHeapLimitMb, 32 MB by default, kept in power-of-two size classes).
+static const x86::reg32 s_simulatedMemory = 160*1024*1024;
 
 x86::reg8* MemMap::s_memory = nullptr;
 x86::reg8* MemMap::s_blocks = nullptr;

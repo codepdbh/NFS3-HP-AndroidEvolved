@@ -32,6 +32,10 @@ MMRESULT timeSetEvent(WinApplication* app, x86::CPU& cpu,
                       UINT uDelay, UINT uResolution, LPTIMECALLBACK lpTimeProc,
                       x86::reg32 dwUser, UINT fuEvent);
 
+DWORD timeGetTime(WinApplication* app, x86::CPU& cpu);
+BOOL PlaySoundA(WinApplication* app, x86::CPU& cpu,
+                LPCSTR pszSound, HMODULE hmod, DWORD fdwSound);
+
 }}
 
 #endif

@@ -81,6 +81,8 @@ public:
     static void setDataDirectory(const char* path);
     static void setCdDirectory(const char* path);
     static x86::reg32 remove(const char* filename);
+    /** Host path for a game (Win32) path, resolved case-insensitively. */
+    static std::string hostPath(const char* path);
 
     operator void*() { return reinterpret_cast<void*>(static_cast<intptr_t>(m_file)+1); }
 private:

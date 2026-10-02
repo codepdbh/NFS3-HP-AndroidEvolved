@@ -6,6 +6,9 @@ option(WITH_PEDANTIC_FPU "Compile pedantic FPU implementation" OFF)
 option(WITH_MMX "Enable MMX support" ON)
 option(BUILD_NFS2 "Build Need for Speed II SE" OFF)
 option(BUILD_NFS3 "Build Need for Speed III HP" ON)
+# Recompiled NFS3 Modern Patch v1.6.1 (widescreen, nfs3.ini, many fixes); see
+# disassemble_nfs3hp_modern.py. Needs the patch's data files next to the game.
+option(NFS3_MODERN_PATCH "Build NFS3 from the Modern Patch executable" OFF)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -68,6 +71,12 @@ if(ANDROID)
     endif()
     add_subdirectory("${SDL2_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/SDL2")
     set(NFS_GL_LIBRARY GLESv3 log android)
+    # -O2 rather than the NDK's -O3: same speed for the generated code at a
+    # fraction of the compile time. Guest memory is type-punned through unions
+    # and FMA contraction would change x87-era float results, so disable both.
+    set(CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG" CACHE STRING "" FORCE)
+    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG" CACHE STRING "" FORCE)
+    add_compile_options(-fno-strict-aliasing -ffp-contract=off)
 else()
     find_package(SDL2 REQUIRED)
     find_package(OpenGL REQUIRED)
@@ -99,10 +108,13 @@ file(GLOB NFS2SE_DISASM_SOURCES
 file(GLOB NFS2SE_DISASM_HEADERS
      "${CMAKE_SOURCE_DIR}/src/nfs2se/disassembly/*.h")
 
-file(GLOB NFS3HP_DISASM_SOURCES
-     "${CMAKE_SOURCE_DIR}/src/nfs3hp/disassembly/*.cpp")
-file(GLOB NFS3HP_DISASM_HEADERS
-     "${CMAKE_SOURCE_DIR}/src/nfs3hp/disassembly/*.h")
+if(NFS3_MODERN_PATCH)
+    set(NFS3HP_DISASM_DIR "${CMAKE_SOURCE_DIR}/src/nfs3hp/disassembly_modern")
+else()
+    set(NFS3HP_DISASM_DIR "${CMAKE_SOURCE_DIR}/src/nfs3hp/disassembly")
+endif()
+file(GLOB NFS3HP_DISASM_SOURCES CONFIGURE_DEPENDS "${NFS3HP_DISASM_DIR}/*.cpp")
+file(GLOB NFS3HP_DISASM_HEADERS CONFIGURE_DEPENDS "${NFS3HP_DISASM_DIR}/*.h")
 
 # ---------------------------------------------------------------------------
 # core static library
@@ -176,10 +188,18 @@ function(add_game_exe name)
         add_executable(${name} ${GAME_SOURCES} ${DISASM_SOURCES} ${DISASM_HEADERS})
     endif()
     set_source_files_properties(${DISASM_HEADERS} PROPERTIES HEADER_FILE_ONLY TRUE)
+    if(name STREQUAL "nfs3hp")
+        set(disasm_dir ${NFS3HP_DISASM_DIR})
+    else()
+        set(disasm_dir ${CMAKE_SOURCE_DIR}/src/${name}/disassembly)
+    endif()
     target_include_directories(${name} PRIVATE
         ${game_src_dir}
-        ${CMAKE_SOURCE_DIR}/src/${name}/disassembly
+        ${disasm_dir}
         ${CMAKE_SOURCE_DIR}/include)
+    if(name STREQUAL "nfs3hp" AND NFS3_MODERN_PATCH)
+        target_compile_definitions(${name} PRIVATE NFS3_MODERN_PATCH)
+    endif()
     target_link_libraries(${name} PRIVATE ${SDL2_MAIN_TARGET} nfs_core ${SDL2_LIB_TARGET} ${NFS_GL_LIBRARY})
     if(WITH_PEDANTIC_FPU)
         target_compile_definitions(${name} PRIVATE WITH_PEDANTIC_FPU)

@@ -72,3 +72,27 @@ MMRESULT timeSetEvent(WinApplication* app, x86::CPU& cpu,
 }
 
 }}
+
+namespace win32 { namespace winmm
+{
+
+DWORD timeGetTime(WinApplication* app, x86::CPU& cpu)
+{
+    NFS2_USE(app);
+    NFS2_USE(cpu);
+    return timeGetTickCount();
+}
+
+BOOL PlaySoundA(WinApplication* app, x86::CPU& cpu,
+                LPCSTR pszSound, HMODULE hmod, DWORD fdwSound)
+{
+    // The Modern Patch only uses this for optional interface beeps.
+    NFS2_USE(app);
+    NFS2_USE(cpu);
+    NFS2_USE(pszSound);
+    NFS2_USE(hmod);
+    NFS2_USE(fdwSound);
+    return 1;
+}
+
+}}

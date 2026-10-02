@@ -7,5 +7,5 @@ if [[ ! -f vendor/SDL/CMakeLists.txt ]]; then
 fi
 [[ "$(git -C vendor/SDL rev-parse HEAD)" == 5d249570393f7a37e037abf22cd6012a4cc56a71 ]] || { echo "Unexpected SDL revision" >&2; exit 1; }
 cd android
-bash ./gradlew assembleDebug --console=plain
-echo "APK: android/app/build/outputs/apk/debug/app-debug.apk"
+bash ./gradlew assembleRelease --console=plain
+echo "APK: android/app/build/outputs/apk/release/app-release.apk"

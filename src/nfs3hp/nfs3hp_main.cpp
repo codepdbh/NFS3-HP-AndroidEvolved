@@ -2,6 +2,8 @@
 #include <lib/file.h>
 #include <lib/registry.h>
 #include <nfs3hp.h>
+#include <winapi/kernel32.h>
+#include <lib/window.h>
 #include <string>
 #ifdef __ANDROID__
 #include <SDL_system.h>
@@ -63,6 +65,12 @@ int main(int argc, char* argv[])
     SDL_Log("[NFS3][BOOT] Starting native runtime");
     {
         nfs3hp::Application app("nfs3.exe");
+#ifdef NFS3_MODERN_PATCH
+        // .rsrc of the patched executable (see disassembly_modern/nfs3hp.cpp);
+        // the patch keeps fonts and other data there.
+        win32::kernel32::setResourceSection(0xa37000);
+        win32::Window::setWideRenderAllowed(true);
+#endif
         app.addRegistryKey(win32::HKEY_LOCAL_MACHINE, "SOFTWARE\\Electronic Arts\\Need For Speed III", "3D Device Description", new win32::RegistryValue("3Dfx Voodoo 2"));
         app.addRegistryKey(win32::HKEY_LOCAL_MACHINE, "SOFTWARE\\Electronic Arts\\Need For Speed III", "3D Card", new win32::RegistryValue("3Dfx Voodoo 2"));
         //app.addRegistryKey(win32::HKEY_LOCAL_MACHINE, "SOFTWARE\\Electronic Arts\\Need For Speed III", "Thrash Driver", new win32::RegistryValue("softtri"));

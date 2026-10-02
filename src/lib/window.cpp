@@ -1,3 +1,5 @@
+#include <atomic>
+#include <lib/gamepad.h>
 #include <lib/window.h>
 #include <lib/thread.h>
 #include <SDL_video.h>
@@ -26,16 +28,81 @@ void Window::setRenderSize(int width, int height) {
     s_renderWidth = width; s_renderHeight = height;
 }
 
-static void mouseViewport(SDL_Window* window, float& scale, float& left, float& top) {
+// <0: keep the game's own aspect, 0: fill the whole screen, >0: stretch up to this aspect.
+static std::atomic<float> s_displayAspect{-1.f};
+
+void Window::setDisplayAspect(float aspect) { s_displayAspect.store(aspect); }
+
+int Window::getRenderWidth() { return s_renderWidth; }
+
+static bool s_wideRenderAllowed = false;
+
+void Window::setWideRenderAllowed(bool allowed) { s_wideRenderAllowed = allowed; }
+
+/**
+ * The Modern Patch adapts field of view and HUD to whatever grSstScreenWidth and
+ * grSstScreenHeight report, as it does with nGlide's desktop resolution. Race
+ * modes are widened to the display aspect; 640x480 is left alone because the
+ * front end is laid out for it.
+ */
+void Window::widenRenderSize(int& width, int& height) {
+    if(!s_wideRenderAllowed || (width==640 && height==480)) return;
+    float target=s_displayAspect.load();
+    if(target==0) {
+        SDL_DisplayMode mode;
+        if(SDL_GetDesktopDisplayMode(0,&mode)!=0 || mode.w<=0 || mode.h<=0) return;
+        target=float(std::max(mode.w,mode.h))/float(std::min(mode.w,mode.h));
+    }
+    if(target<=float(width)/float(height)+0.01f) return;
+    width=std::min(int(height*target+0.5f) & ~7, 2048);
+}
+
+void Window::getViewport(int width, int height, float& left, float& top, float& scaleX, float& scaleY) {
+    const float aspect=s_displayAspect.load();
+    float target=aspect<0 ? float(s_renderWidth)/s_renderHeight : aspect==0 ? float(width)/height : aspect;
+    float w=float(width), h=float(height);
+    if(w/h>target) w=h*target; else h=w/target;
+    scaleX=w/s_renderWidth; scaleY=h/s_renderHeight;
+    left=(width-w)/2; top=(height-h)/2;
+}
+
+static void mouseViewport(SDL_Window* window, float& scaleX, float& scaleY, float& left, float& top) {
     int width=0,height=0; SDL_GetWindowSize(window,&width,&height);
-    scale=std::min(float(width)/s_renderWidth,float(height)/s_renderHeight);
-    left=(width-s_renderWidth*scale)/2; top=(height-s_renderHeight*scale)/2;
+    if(width<=0||height<=0) { scaleX=scaleY=0; return; }
+    Window::getViewport(width,height,left,top,scaleX,scaleY);
+}
+
+/**
+ * NFS3 reads the mouse through DirectInput, often in loops that do not pump
+ * window messages (e.g. waiting for a button release), so the DirectInput mouse
+ * is fed straight from SDL as events arrive rather than from the message queue.
+ */
+static int SDLCALL feedDirectInputMouse(void*, SDL_Event* event) {
+    const bool motion=event->type==SDL_MOUSEMOTION;
+    if(!motion && event->type!=SDL_MOUSEBUTTONDOWN && event->type!=SDL_MOUSEBUTTONUP) return 1;
+    SDL_Window* target=SDL_GetWindowFromID(motion ? event->motion.windowID : event->button.windowID);
+    if(!target) return 1;
+    float scaleX,scaleY,left,top; mouseViewport(target,scaleX,scaleY,left,top);
+    if(scaleX<=0||scaleY<=0) return 1;
+    const int px=motion ? event->motion.x : event->button.x;
+    const int py=motion ? event->motion.y : event->button.y;
+    const int x=std::clamp(int((px-left)/scaleX),0,s_renderWidth-1);
+    const int y=std::clamp(int((py-top)/scaleY),0,s_renderHeight-1);
+    if(motion) { Mouse::moveTo(x,y,false); return 1; }
+    const bool down=event->type==SDL_MOUSEBUTTONDOWN;
+    // A finger lands anywhere, so re-anchor the cursor on every touch.
+    if(down) Mouse::moveTo(x,y,event->button.which==SDL_TOUCH_MOUSEID);
+    const int b=event->button.button;
+    if(b==SDL_BUTTON_LEFT) Mouse::button(0,down);
+    else if(b==SDL_BUTTON_RIGHT) Mouse::button(1,down);
+    else if(b==SDL_BUTTON_MIDDLE) Mouse::button(2,down);
+    return 1;
 }
 
 bool Window::setCursorPosition(int x, int y) {
     SDL_Window* window=SDL_GetMouseFocus(); if(!window) return false;
-    float scale,left,top; mouseViewport(window,scale,left,top);
-    SDL_WarpMouseInWindow(window,int(left+x*scale),int(top+y*scale)); return true;
+    float scaleX,scaleY,left,top; mouseViewport(window,scaleX,scaleY,left,top);
+    SDL_WarpMouseInWindow(window,int(left+x*scaleX),int(top+y*scaleY)); return true;
 }
 
 static const x86::reg8 s_scancodeTable[100] =
@@ -75,6 +142,12 @@ Window::Window(const char *title, int x, int y, int w, int h)
         SDL_Log("Failed to create window: %s", SDL_GetError());
         return;
     }
+    static bool s_mouseWatch = false;
+    if (!s_mouseWatch)
+    {
+        SDL_AddEventWatch(feedDirectInputMouse, nullptr);
+        s_mouseWatch = true;
+    }
 }
 
 Window::~Window()
@@ -104,14 +177,14 @@ x86::reg32 Window::getMessage(const x86::CPU& cpu, MSG* result, Window *window, 
                     const bool motion=event.type==SDL_MOUSEMOTION;
                     SDL_Window* target=SDL_GetWindowFromID(motion ? event.motion.windowID : event.button.windowID);
                     if(!target) break;
-                    float scale,left,top; mouseViewport(target,scale,left,top);
-                    if(scale<=0) break;
+                    float scaleX,scaleY,left,top; mouseViewport(target,scaleX,scaleY,left,top);
+                    if(scaleX<=0||scaleY<=0) break;
                     const int px=motion ? event.motion.x : event.button.x;
                     const int py=motion ? event.motion.y : event.button.y;
                     // Ignore touches in the pillarboxes; the game uses its own cursor.
-                    if(px<left || py<top || px>=left+s_renderWidth*scale || py>=top+s_renderHeight*scale) break;
-                    const int x=std::clamp(int((px-left)/scale),0,s_renderWidth-1);
-                    const int y=std::clamp(int((py-top)/scale),0,s_renderHeight-1);
+                    if(px<left || py<top || px>=left+s_renderWidth*scaleX || py>=top+s_renderHeight*scaleY) break;
+                    const int x=std::clamp(int((px-left)/scaleX),0,s_renderWidth-1);
+                    const int y=std::clamp(int((py-top)/scaleY),0,s_renderHeight-1);
                     result->message=0x0200; // WM_MOUSEMOVE
                     if(!motion) {
                         if(event.button.button==SDL_BUTTON_LEFT) result->message=event.type==SDL_MOUSEBUTTONDOWN ? 0x0201 : 0x0202;
@@ -490,3 +563,19 @@ x86::reg32 Window::getMessageHandler()
 }
 
 }
+
+#ifdef __ANDROID__
+#include <jni.h>
+extern "C" JNIEXPORT void JNICALL
+Java_com_nfsrecompiled_nfs3hp_NFS3Activity_nativeSetDisplayAspect(JNIEnv*, jclass, jfloat aspect)
+{
+    win32::Window::setDisplayAspect(aspect);
+}
+
+/** Width of the game's current video mode; the front end always runs at 640x480. */
+extern "C" JNIEXPORT jint JNICALL
+Java_com_nfsrecompiled_nfs3hp_NFS3Activity_nativeGetRenderWidth(JNIEnv*, jclass)
+{
+    return win32::Window::getRenderWidth();
+}
+#endif

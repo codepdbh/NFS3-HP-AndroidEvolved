@@ -7,12 +7,14 @@ android {
         applicationId 'com.nfsrecompiled.nfs3hp'
         minSdk 26
         targetSdk 35
-        versionCode 1
-        versionName '0.1-dev'
+        versionCode 2
+        versionName '0.2-dev'
         ndk { abiFilters 'arm64-v8a' }
         externalNativeBuild {
             cmake {
+                // -PoriginalExe builds the unpatched game instead of the Modern Patch.
                 arguments '-DBUILD_NFS2=OFF', '-DBUILD_NFS3=ON', '-DWITH_PEDANTIC_FPU=OFF',
+                    "-DNFS3_MODERN_PATCH=${project.hasProperty('originalExe') ? 'OFF' : 'ON'}",
                     "-DSDL2_SOURCE_DIR=${file('../../vendor/SDL').absolutePath.replace('\\','/')}"
                 targets 'nfs3hp', 'SDL2'
             }
@@ -20,5 +22,16 @@ android {
     }
     externalNativeBuild { cmake { path '../../CMakeLists.txt'; version '3.30.5' } }
     sourceSets { main { java.srcDirs += '../../vendor/SDL/android-project/app/src/main/java' } }
-    buildTypes { debug { debuggable true; jniDebuggable true } }
+    buildTypes {
+        debug { debuggable true; jniDebuggable true }
+        // The recompiled game is ~85 MB of C++ that relies on inlining every
+        // guest memory access; -O0 makes it unplayable. Release is the build to play.
+        release {
+            debuggable false
+            jniDebuggable false
+            minifyEnabled false
+            signingConfig signingConfigs.debug
+            externalNativeBuild { cmake { arguments '-DCMAKE_BUILD_TYPE=Release' } }
+        }
+    }
 }

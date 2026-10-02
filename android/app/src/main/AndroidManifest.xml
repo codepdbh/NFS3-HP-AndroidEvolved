@@ -5,7 +5,7 @@
     <uses-feature android:glEsVersion="0x00030000" android:required="true" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.hardware.gamepad" android:required="false" />
-    <application android:label="NFS3 HP Android Evolved" android:allowBackup="false" android:requestLegacyExternalStorage="true" android:icon="@mipmap/ic_launcher"
+    <application android:label="NFS3 HP Android Evolved" android:appCategory="game" android:isGame="true" android:allowBackup="false" android:requestLegacyExternalStorage="true" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen" android:hardwareAccelerated="true">
         <meta-data android:name="SDL_ENV.SDL_ACCELEROMETER_AS_JOYSTICK" android:value="0" />
         <activity android:name=".NFS3Activity" android:exported="false" android:screenOrientation="sensorLandscape" android:launchMode="singleTask"

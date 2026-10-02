@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <winapi/dinput/idirectinputdevice.h>
 #include <winapi/wrapper.h>
 #include <lib/gamepad.h>
@@ -179,7 +180,18 @@ HRESULT IDirectInputDevice::GetDeviceState(WinApplication* app, x86::CPU& cpu,
     app->unlockContext(cpu);
     Gamepad* gamepad = dynamic_cast<Gamepad*>(m_resource);
     memset(lpvData, 0, cbData);
-    if (gamepad)
+    if (dynamic_cast<Mouse*>(m_resource) && cbData >= 16)
+    {
+        // DIMOUSESTATE: lX, lY, lZ, rgbButtons[4].
+        x86::sreg32 dx, dy;
+        x86::reg8 buttons[4];
+        Mouse::takeState(dx, dy, buttons);
+        x86::reg8* state = reinterpret_cast<x86::reg8*>(lpvData);
+        memcpy(state, &dx, 4);
+        memcpy(state + 4, &dy, 4);
+        memcpy(state + 12, buttons, 4);
+    }
+    else if (gamepad)
     {
         NFS2_ASSERT(cbData == sizeof(DIJOYSTATE));
         DIJOYSTATE* state = reinterpret_cast<DIJOYSTATE*>(lpvData);
@@ -213,7 +225,29 @@ HRESULT IDirectInputDevice::GetDeviceData(WinApplication* app, x86::CPU& cpu,
     NFS2_USE(pdwInOut);
     NFS2_USE(dwFlags);
     NFS2_ASSERT(dynamic_cast<Mouse*>(m_resource));
-    *pdwInOut = 0;
+    static x86::reg32 s_sequence = 0;
+    const bool peek = (dwFlags & 1) != 0;  // DIGDD_PEEK
+    const x86::reg32 capacity = *pdwInOut;
+    x86::reg32 count = 0;
+    MouseEvent event;
+    // A null buffer with INFINITE count flushes the queue.
+    if (!rgdod)
+    {
+        if (!peek) while (Mouse::pop(event)) ++count;
+        *pdwInOut = count;
+        return 0;
+    }
+    x86::reg8* out = reinterpret_cast<x86::reg8*>(rgdod);
+    const x86::reg32 stride = cbObjectData ? cbObjectData : 16;
+    while (count < capacity && !peek && Mouse::pop(event))
+    {
+        x86::reg8* item = out + count * stride;
+        memset(item, 0, stride);
+        const x86::reg32 fields[4] = { event.offset, event.data, event.time, ++s_sequence };
+        memcpy(item, fields, std::min<x86::reg32>(stride, sizeof(fields)));
+        ++count;
+    }
+    *pdwInOut = count;
     return 0;
 }
 
