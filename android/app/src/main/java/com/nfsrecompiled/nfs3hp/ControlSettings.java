@@ -51,7 +51,7 @@ final class ControlSettings {
         prefs = context.getSharedPreferences("controls", Context.MODE_PRIVATE);
         language = prefs.getString("language", systemLanguage());
         screen = prefs.getInt("screen", screen);
-        layout = prefs.getInt("layoutMode", layout);
+        layout = prefs.getInt("touchLayout", layout);
         steering = prefs.getInt("steeringMode", steering);
         opacity = prefs.getInt("opacity", opacity);
         size = prefs.getInt("size", size);
@@ -105,7 +105,7 @@ final class ControlSettings {
         }
         prefs.edit()
             .putString("language", language).putInt("screen", screen)
-            .putInt("layoutMode", layout).putInt("steeringMode", steering).putInt("opacity", opacity).putInt("size", size)
+            .putInt("touchLayout", layout).putInt("steeringMode", steering).putInt("opacity", opacity).putInt("size", size)
             .putInt("tiltRange", tiltRange).putFloat("tiltCenter", tiltCenter)
             .putBoolean("tiltInvert", tiltInvert).putInt("deadZone", deadZone)
             .putInt("steerCurve", steerCurve).putInt("pwmPeriod", pwmPeriod)

@@ -106,6 +106,10 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
     /** Picks the menu or race layout from what the game is drawing, unless the player fixed one. */
     private void updateLayoutMode() {
         if (settings.layout != ControlSettings.LAYOUT_AUTO) {
+            if (candidateMode != -2) {
+                android.util.Log.i("NFS3/INPUT", "Touch layout fixed by settings: " + settings.layout);
+                candidateMode = -2;
+            }
             controls.setMode(settings.layout == ControlSettings.LAYOUT_RACE ? TouchControlsView.MODE_RACE : TouchControlsView.MODE_MENU);
             return;
         }
@@ -122,7 +126,7 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
         if (wanted != candidateMode) { candidateMode = wanted; candidateSince = now; return; }
         long wait = wanted == TouchControlsView.MODE_RACE ? RACE_AFTER_MS : MENU_AFTER_MS;
         if (now - candidateSince >= wait) {
-            android.util.Log.i("NFS3/INPUT", "Layout " + (wanted == TouchControlsView.MODE_RACE ? "race" : "menu") + " (" + width + " px, " + triangles + " triangles)");
+            android.util.Log.i("NFS3/INPUT", "Layout " + (wanted == TouchControlsView.MODE_RACE ? "race" : "menu") + " (state " + nativeGetGameState() + ", " + width + " px, " + triangles + " triangles)");
             controls.setMode(wanted);
             candidateMode = -1;
         }

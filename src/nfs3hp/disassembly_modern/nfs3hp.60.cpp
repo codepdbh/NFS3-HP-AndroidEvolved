@@ -5,6 +5,33 @@ namespace nfs3hp
 {
 
 /* align: skip  */
+void Application::sub_533b4a(WinApplication* app, x86::CPU& cpu)
+{
+  NFS2_USE(cpu);
+  NFS2_USE(app);
+    // 00533b4a  ff2540465300           -jmp dword ptr [0x534640]
+    return app->dynamic_call(app->getMemory<x86::reg32>(5457472), cpu);
+}
+
+/* align: skip  */
+void Application::sub_533b50(WinApplication* app, x86::CPU& cpu)
+{
+  NFS2_USE(cpu);
+  NFS2_USE(app);
+    // 00533b50  ff25b0455300           -jmp dword ptr [0x5345b0]
+    return app->dynamic_call(app->getMemory<x86::reg32>(5457328), cpu);
+}
+
+/* align: skip  */
+void Application::sub_533b56(WinApplication* app, x86::CPU& cpu)
+{
+  NFS2_USE(cpu);
+  NFS2_USE(app);
+    // 00533b56  ff2590455300           -jmp dword ptr [0x534590]
+    return app->dynamic_call(app->getMemory<x86::reg32>(5457296), cpu);
+}
+
+/* align: skip  */
 void Application::sub_533b5c(WinApplication* app, x86::CPU& cpu)
 {
   NFS2_USE(cpu);
@@ -875,33 +902,6 @@ void Application::sub_533d9c(WinApplication* app, x86::CPU& cpu)
   NFS2_USE(app);
     // 00533d9c  ff2594475300           -jmp dword ptr [0x534794]
     return app->dynamic_call(app->getMemory<x86::reg32>(5457812), cpu);
-}
-
-/* align: skip  */
-void Application::sub_533da2(WinApplication* app, x86::CPU& cpu)
-{
-  NFS2_USE(cpu);
-  NFS2_USE(app);
-    // 00533da2  ff25a8445300           -jmp dword ptr [0x5344a8]
-    return app->dynamic_call(app->getMemory<x86::reg32>(5457064), cpu);
-}
-
-/* align: skip  */
-void Application::sub_533da8(WinApplication* app, x86::CPU& cpu)
-{
-  NFS2_USE(cpu);
-  NFS2_USE(app);
-    // 00533da8  ff259c455300           -jmp dword ptr [0x53459c]
-    return app->dynamic_call(app->getMemory<x86::reg32>(5457308), cpu);
-}
-
-/* align: skip  */
-void Application::sub_533dae(WinApplication* app, x86::CPU& cpu)
-{
-  NFS2_USE(cpu);
-  NFS2_USE(app);
-    // 00533dae  ff25fc465300           -jmp dword ptr [0x5346fc]
-    return app->dynamic_call(app->getMemory<x86::reg32>(5457660), cpu);
 }
 
 }

@@ -4,6 +4,440 @@
 namespace nfs3hp
 {
 
+/* align: skip 0x8d 0x40 0x00 0x8b 0xc9 */
+void Application::sub_4fd520(WinApplication* app, x86::CPU& cpu)
+{
+  NFS2_USE(cpu);
+  NFS2_USE(app);
+    // 004fd520  89d0                   -mov eax, edx
+    cpu.eax = cpu.edx;
+    // 004fd522  89da                   -mov edx, ebx
+    cpu.edx = cpu.ebx;
+    // 004fd524  8b1dac4f9f00           -mov ebx, dword ptr [0x9f4fac]
+    cpu.ebx = app->getMemory<x86::reg32>(x86::reg32(10440620) /* 0x9f4fac */);
+    // 004fd52a  c1e202                 +shl edx, 2
+    {
+        x86::reg8 tmp = 2 /*0x2*/ % 32;
+        x86::reg32& op = cpu.edx;
+        if (tmp)
+        {
+            cpu.flags.cf = 1 & (op >> (32 - tmp));
+            cpu.set_szp((op <<= tmp));
+            if (tmp == 1) cpu.flags.of = (cpu.flags.cf != (1 & (op >> (32 - 1))));
+        }
+    }
+    // 004fd52d  e9ef31feff             -jmp 0x4e0721
+    return sub_4e0721(app, cpu);
+}
+
+/* align: skip 0x8d 0x80 0x00 0x00 0x00 0x00 0x8d 0x92 0x00 0x00 0x00 0x00 0x8b 0xc0 */
+void Application::sub_4fd540(WinApplication* app, x86::CPU& cpu)
+{
+  NFS2_USE(cpu);
+  NFS2_USE(app);
+    // 004fd540  56                     -push esi
+    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.esi;
+    cpu.esp -= 4;
+    // 004fd541  57                     -push edi
+    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.edi;
+    cpu.esp -= 4;
+    // 004fd542  55                     -push ebp
+    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.ebp;
+    cpu.esp -= 4;
+    // 004fd543  83ec14                 -sub esp, 0x14
+    (cpu.esp) -= x86::reg32(x86::sreg32(20 /*0x14*/));
+    // 004fd546  89c6                   -mov esi, eax
+    cpu.esi = cpu.eax;
+    // 004fd548  89d7                   -mov edi, edx
+    cpu.edi = cpu.edx;
+    // 004fd54a  8b442424               -mov eax, dword ptr [esp + 0x24]
+    cpu.eax = app->getMemory<x86::reg32>(cpu.esp + x86::reg32(36) /* 0x24 */);
+    // 004fd54e  8a1510505600           -mov dl, byte ptr [0x565010]
+    cpu.dl = app->getMemory<x86::reg8>(x86::reg32(5656592) /* 0x565010 */);
+    // 004fd554  80fa08                 +cmp dl, 8
+    {
+        x86::reg8 tmp1 = cpu.dl;
+        x86::reg8 tmp2 = x86::reg8(x86::sreg8(8 /*0x8*/));
+        x86::reg8 result = tmp1 - tmp2;
+        cpu.flags.cf = tmp1 < tmp2;
+        cpu.flags.of = 1 & (tmp1 >> 7);
+        cpu.flags.of ^= 1 & (result >> 7);
+        cpu.flags.of &= (1 & (tmp1 >> 7)) != (1 & (tmp2 >> 7));
+        cpu.set_szp(result);
+    }
+    // 004fd557  0f8381000000           -jae 0x4fd5de
+    if (!cpu.flags.cf)
+    {
+        goto L_0x004fd5de;
+    }
+    // 004fd55d  80fa04                 +cmp dl, 4
+    {
+        x86::reg8 tmp1 = cpu.dl;
+        x86::reg8 tmp2 = x86::reg8(x86::sreg8(4 /*0x4*/));
+        x86::reg8 result = tmp1 - tmp2;
+        cpu.flags.cf = tmp1 < tmp2;
+        cpu.flags.of = 1 & (tmp1 >> 7);
+        cpu.flags.of ^= 1 & (result >> 7);
+        cpu.flags.of &= (1 & (tmp1 >> 7)) != (1 & (tmp2 >> 7));
+        cpu.set_szp(result);
+    }
+    // 004fd560  750a                   -jne 0x4fd56c
+    if (!cpu.flags.zf)
+    {
+        goto L_0x004fd56c;
+    }
+    // 004fd562  83e00f                 -and eax, 0xf
+    cpu.eax &= x86::reg32(x86::sreg32(15 /*0xf*/));
+    // 004fd565  89c2                   -mov edx, eax
+    cpu.edx = cpu.eax;
+    // 004fd567  c1e204                 -shl edx, 4
+    cpu.edx <<= 4 /*0x4*/ % 32;
+L_0x004fd56a:
+    // 004fd56a  09d0                   -or eax, edx
+    cpu.eax |= x86::reg32(x86::sreg32(cpu.edx));
+L_0x004fd56c:
+    // 004fd56c  a3ac4f9f00             -mov dword ptr [0x9f4fac], eax
+    app->getMemory<x86::reg32>(x86::reg32(10440620) /* 0x9f4fac */) = cpu.eax;
+    // 004fd571  31d2                   -xor edx, edx
+    cpu.edx ^= x86::reg32(x86::sreg32(cpu.edx));
+    // 004fd573  8a2510505600           -mov ah, byte ptr [0x565010]
+    cpu.ah = app->getMemory<x86::reg8>(x86::reg32(5656592) /* 0x565010 */);
+    // 004fd579  8915cc765600           -mov dword ptr [0x5676cc], edx
+    app->getMemory<x86::reg32>(x86::reg32(5666508) /* 0x5676cc */) = cpu.edx;
+    // 004fd57f  80fc10                 +cmp ah, 0x10
+    {
+        x86::reg8 tmp1 = cpu.ah;
+        x86::reg8 tmp2 = x86::reg8(x86::sreg8(16 /*0x10*/));
+        x86::reg8 result = tmp1 - tmp2;
+        cpu.flags.cf = tmp1 < tmp2;
+        cpu.flags.of = 1 & (tmp1 >> 7);
+        cpu.flags.of ^= 1 & (result >> 7);
+        cpu.flags.of &= (1 & (tmp1 >> 7)) != (1 & (tmp2 >> 7));
+        cpu.set_szp(result);
+    }
+    // 004fd582  7513                   -jne 0x4fd597
+    if (!cpu.flags.zf)
+    {
+        goto L_0x004fd597;
+    }
+    // 004fd584  833db076560000         +cmp dword ptr [0x5676b0], 0
+    {
+        x86::reg32 tmp1 = app->getMemory<x86::reg32>(x86::reg32(5666480) /* 0x5676b0 */);
+        x86::reg32 tmp2 = x86::reg32(x86::sreg32(0 /*0x0*/));
+        x86::reg32 result = tmp1 - tmp2;
+        cpu.flags.cf = tmp1 < tmp2;
+        cpu.flags.of = 1 & (tmp1 >> 31);
+        cpu.flags.of ^= 1 & (result >> 31);
+        cpu.flags.of &= (1 & (tmp1 >> 31)) != (1 & (tmp2 >> 31));
+        cpu.set_szp(result);
+    }
+    // 004fd58b  740a                   -je 0x4fd597
+    if (cpu.flags.zf)
+    {
+        goto L_0x004fd597;
+    }
+    // 004fd58d  c705cc765600e0d44f00   -mov dword ptr [0x5676cc], 0x4fd4e0
+    app->getMemory<x86::reg32>(x86::reg32(5666508) /* 0x5676cc */) = 5231840 /*0x4fd4e0*/;
+L_0x004fd597:
+    // 004fd597  66895c2404             -mov word ptr [esp + 4], bx
+    app->getMemory<x86::reg16>(cpu.esp + x86::reg32(4) /* 0x4 */) = cpu.bx;
+    // 004fd59c  66894c2406             -mov word ptr [esp + 6], cx
+    app->getMemory<x86::reg16>(cpu.esp + x86::reg32(6) /* 0x6 */) = cpu.cx;
+    // 004fd5a1  31c0                   -xor eax, eax
+    cpu.eax ^= x86::reg32(x86::sreg32(cpu.eax));
+    // 004fd5a3  30d2                   -xor dl, dl
+    cpu.dl ^= x86::reg8(x86::sreg8(cpu.dl));
+    // 004fd5a5  b9b4765600             -mov ecx, 0x5676b4
+    cpu.ecx = 5666484 /*0x5676b4*/;
+    // 004fd5aa  881424                 -mov byte ptr [esp], dl
+    app->getMemory<x86::reg8>(cpu.esp) = cpu.dl;
+    // 004fd5ad  a011505600             -mov al, byte ptr [0x565011]
+    cpu.al = app->getMemory<x86::reg8>(x86::reg32(5656593) /* 0x565011 */);
+    // 004fd5b2  8b1424                 -mov edx, dword ptr [esp]
+    cpu.edx = app->getMemory<x86::reg32>(cpu.esp);
+    // 004fd5b5  25ff000000             -and eax, 0xff
+    cpu.eax &= x86::reg32(x86::sreg32(255 /*0xff*/));
+    // 004fd5ba  89fb                   -mov ebx, edi
+    cpu.ebx = cpu.edi;
+    // 004fd5bc  09c2                   -or edx, eax
+    cpu.edx |= x86::reg32(x86::sreg32(cpu.eax));
+    // 004fd5be  89e0                   -mov eax, esp
+    cpu.eax = cpu.esp;
+    // 004fd5c0  89d5                   -mov ebp, edx
+    cpu.ebp = cpu.edx;
+    // 004fd5c2  891424                 -mov dword ptr [esp], edx
+    app->getMemory<x86::reg32>(cpu.esp) = cpu.edx;
+    // 004fd5c5  81e5ff000000           -and ebp, 0xff
+    cpu.ebp &= x86::reg32(x86::sreg32(255 /*0xff*/));
+    // 004fd5cb  89f2                   -mov edx, esi
+    cpu.edx = cpu.esi;
+    // 004fd5cd  892c24                 -mov dword ptr [esp], ebp
+    app->getMemory<x86::reg32>(cpu.esp) = cpu.ebp;
+    // 004fd5d0  e8dbda0000             -call 0x50b0b0
+    cpu.esp -= 4;
+    sub_50b0b0(app, cpu);
+    if (cpu.terminate) return;
+    // 004fd5d5  83c414                 +add esp, 0x14
+    {
+        x86::reg32& tmp1 = cpu.esp;
+        x86::reg32 tmp2 = x86::reg32(x86::sreg32(20 /*0x14*/));
+        x86::reg32 result = tmp1 + tmp2;
+        cpu.flags.of = 1 & (tmp1 >> 31);
+        cpu.flags.of ^= 1 & (result >> 31);
+        cpu.flags.of &= (1 & (tmp1 >> 31)) == (1 & (tmp2 >> 31));
+        cpu.flags.cf = result < tmp1;
+        tmp1 = result;
+        cpu.set_szp(tmp1);
+    }
+    // 004fd5d8  5d                     -pop ebp
+    cpu.ebp = app->getMemory<x86::reg32>(cpu.esp);
+    cpu.esp += 4;
+    // 004fd5d9  5f                     -pop edi
+    cpu.edi = app->getMemory<x86::reg32>(cpu.esp);
+    cpu.esp += 4;
+    // 004fd5da  5e                     -pop esi
+    cpu.esi = app->getMemory<x86::reg32>(cpu.esp);
+    cpu.esp += 4;
+    // 004fd5db  c20400                 -ret 4
+    cpu.esp += 4+4 /*0x4*/;
+    return;
+L_0x004fd5de:
+    // 004fd5de  7716                   -ja 0x4fd5f6
+    if (!cpu.flags.cf && !cpu.flags.zf)
+    {
+        goto L_0x004fd5f6;
+    }
+    // 004fd5e0  25ff000000             -and eax, 0xff
+    cpu.eax &= x86::reg32(x86::sreg32(255 /*0xff*/));
+    // 004fd5e5  89c2                   -mov edx, eax
+    cpu.edx = cpu.eax;
+    // 004fd5e7  c1e208                 -shl edx, 8
+    cpu.edx <<= 8 /*0x8*/ % 32;
+    // 004fd5ea  09d0                   -or eax, edx
+    cpu.eax |= x86::reg32(x86::sreg32(cpu.edx));
+    // 004fd5ec  89c2                   -mov edx, eax
+    cpu.edx = cpu.eax;
+    // 004fd5ee  c1e210                 +shl edx, 0x10
+    {
+        x86::reg8 tmp = 16 /*0x10*/ % 32;
+        x86::reg32& op = cpu.edx;
+        if (tmp)
+        {
+            cpu.flags.cf = 1 & (op >> (32 - tmp));
+            cpu.set_szp((op <<= tmp));
+            if (tmp == 1) cpu.flags.of = (cpu.flags.cf != (1 & (op >> (32 - 1))));
+        }
+    }
+    // 004fd5f1  e974ffffff             -jmp 0x4fd56a
+    goto L_0x004fd56a;
+L_0x004fd5f6:
+    // 004fd5f6  80fa0f                 +cmp dl, 0xf
+    {
+        x86::reg8 tmp1 = cpu.dl;
+        x86::reg8 tmp2 = x86::reg8(x86::sreg8(15 /*0xf*/));
+        x86::reg8 result = tmp1 - tmp2;
+        cpu.flags.cf = tmp1 < tmp2;
+        cpu.flags.of = 1 & (tmp1 >> 7);
+        cpu.flags.of ^= 1 & (result >> 7);
+        cpu.flags.of &= (1 & (tmp1 >> 7)) != (1 & (tmp2 >> 7));
+        cpu.set_szp(result);
+    }
+    // 004fd5f9  0f826dffffff           -jb 0x4fd56c
+    if (cpu.flags.cf)
+    {
+        goto L_0x004fd56c;
+    }
+    // 004fd5ff  770f                   -ja 0x4fd610
+    if (!cpu.flags.cf && !cpu.flags.zf)
+    {
+        goto L_0x004fd610;
+    }
+L_0x004fd601:
+    // 004fd601  25ffff0000             -and eax, 0xffff
+    cpu.eax &= x86::reg32(x86::sreg32(65535 /*0xffff*/));
+    // 004fd606  89c2                   -mov edx, eax
+    cpu.edx = cpu.eax;
+    // 004fd608  c1e210                 +shl edx, 0x10
+    {
+        x86::reg8 tmp = 16 /*0x10*/ % 32;
+        x86::reg32& op = cpu.edx;
+        if (tmp)
+        {
+            cpu.flags.cf = 1 & (op >> (32 - tmp));
+            cpu.set_szp((op <<= tmp));
+            if (tmp == 1) cpu.flags.of = (cpu.flags.cf != (1 & (op >> (32 - 1))));
+        }
+    }
+    // 004fd60b  e95affffff             -jmp 0x4fd56a
+    goto L_0x004fd56a;
+L_0x004fd610:
+    // 004fd610  80fa10                 +cmp dl, 0x10
+    {
+        x86::reg8 tmp1 = cpu.dl;
+        x86::reg8 tmp2 = x86::reg8(x86::sreg8(16 /*0x10*/));
+        x86::reg8 result = tmp1 - tmp2;
+        cpu.flags.cf = tmp1 < tmp2;
+        cpu.flags.of = 1 & (tmp1 >> 7);
+        cpu.flags.of ^= 1 & (result >> 7);
+        cpu.flags.of &= (1 & (tmp1 >> 7)) != (1 & (tmp2 >> 7));
+        cpu.set_szp(result);
+    }
+    // 004fd613  74ec                   -je 0x4fd601
+    if (cpu.flags.zf)
+    {
+        goto L_0x004fd601;
+    }
+    // 004fd615  e952ffffff             -jmp 0x4fd56c
+    goto L_0x004fd56c;
+}
+
+/* align: skip 0x00 0x00 */
+void Application::sub_4fd61c(WinApplication* app, x86::CPU& cpu)
+{
+  NFS2_USE(cpu);
+  NFS2_USE(app);
+    // 004fd61c  51                     -push ecx
+    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.ecx;
+    cpu.esp -= 4;
+    // 004fd61d  56                     -push esi
+    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.esi;
+    cpu.esp -= 4;
+    // 004fd61e  891dd8765600           -mov dword ptr [0x5676d8], ebx
+    app->getMemory<x86::reg32>(x86::reg32(5666520) /* 0x5676d8 */) = cpu.ebx;
+    // 004fd624  89c6                   -mov esi, eax
+    cpu.esi = cpu.eax;
+    // 004fd626  57                     -push edi
+    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.edi;
+    cpu.esp -= 4;
+    // 004fd627  55                     -push ebp
+    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.ebp;
+    cpu.esp -= 4;
+L_0x004fd628:
+    // 004fd628  8b06                   -mov eax, dword ptr [esi]
+    cpu.eax = app->getMemory<x86::reg32>(cpu.esi);
+    // 004fd62a  31db                   -xor ebx, ebx
+    cpu.ebx ^= x86::reg32(x86::sreg32(cpu.ebx));
+    // 004fd62c  88c3                   -mov bl, al
+    cpu.bl = cpu.al;
+    // 004fd62e  89c7                   -mov edi, eax
+    cpu.edi = cpu.eax;
+    // 004fd630  c1ef18                 -shr edi, 0x18
+    cpu.edi >>= 24 /*0x18*/ % 32;
+    // 004fd633  2500ff0000             -and eax, 0xff00
+    cpu.eax &= x86::reg32(x86::sreg32(65280 /*0xff00*/));
+    // 004fd638  c1e808                 -shr eax, 8
+    cpu.eax >>= 8 /*0x8*/ % 32;
+    // 004fd63b  8b2c9d18629f00         -mov ebp, dword ptr [ebx*4 + 0x9f6218]
+    cpu.ebp = app->getMemory<x86::reg32>(x86::reg32(10445336) /* 0x9f6218 */ + cpu.ebx * 4);
+    // 004fd642  8b3cbd185e9f00         -mov edi, dword ptr [edi*4 + 0x9f5e18]
+    cpu.edi = app->getMemory<x86::reg32>(x86::reg32(10444312) /* 0x9f5e18 */ + cpu.edi * 4);
+    // 004fd649  83c604                 -add esi, 4
+    (cpu.esi) += x86::reg32(x86::sreg32(4 /*0x4*/));
+    // 004fd64c  8b048518609f00         -mov eax, dword ptr [eax*4 + 0x9f6018]
+    cpu.eax = app->getMemory<x86::reg32>(x86::reg32(10444824) /* 0x9f6018 */ + cpu.eax * 4);
+    // 004fd653  01ef                   -add edi, ebp
+    (cpu.edi) += x86::reg32(x86::sreg32(cpu.ebp));
+    // 004fd655  01c5                   -add ebp, eax
+    (cpu.ebp) += x86::reg32(x86::sreg32(cpu.eax));
+    // 004fd657  01f8                   -add eax, edi
+    (cpu.eax) += x86::reg32(x86::sreg32(cpu.edi));
+    // 004fd659  89c1                   -mov ecx, eax
+    cpu.ecx = cpu.eax;
+    // 004fd65b  89c7                   -mov edi, eax
+    cpu.edi = cpu.eax;
+    // 004fd65d  c1e817                 -shr eax, 0x17
+    cpu.eax >>= 23 /*0x17*/ % 32;
+    // 004fd660  81e100f80f00           -and ecx, 0xff800
+    cpu.ecx &= x86::reg32(x86::sreg32(1046528 /*0xff800*/));
+    // 004fd666  c1e90b                 -shr ecx, 0xb
+    cpu.ecx >>= 11 /*0xb*/ % 32;
+    // 004fd669  81e7ff010000           -and edi, 0x1ff
+    cpu.edi &= x86::reg32(x86::sreg32(511 /*0x1ff*/));
+    // 004fd66f  8b048550599f00         -mov eax, dword ptr [eax*4 + 0x9f5950]
+    cpu.eax = app->getMemory<x86::reg32>(x86::reg32(10443088) /* 0x9f5950 */ + cpu.eax * 4);
+    // 004fd676  8a5efe                 -mov bl, byte ptr [esi - 2]
+    cpu.bl = app->getMemory<x86::reg8>(cpu.esi + x86::reg32(-2) /* -0x2 */);
+    // 004fd679  8b0c8d38559f00         -mov ecx, dword ptr [ecx*4 + 0x9f5538]
+    cpu.ecx = app->getMemory<x86::reg32>(x86::reg32(10442040) /* 0x9f5538 */ + cpu.ecx * 4);
+    // 004fd680  8b3cbdb04f9f00         -mov edi, dword ptr [edi*4 + 0x9f4fb0]
+    cpu.edi = app->getMemory<x86::reg32>(x86::reg32(10440624) /* 0x9f4fb0 */ + cpu.edi * 4);
+    // 004fd687  01c8                   -add eax, ecx
+    (cpu.eax) += x86::reg32(x86::sreg32(cpu.ecx));
+    // 004fd689  8b1c9d185e9f00         -mov ebx, dword ptr [ebx*4 + 0x9f5e18]
+    cpu.ebx = app->getMemory<x86::reg32>(x86::reg32(10444312) /* 0x9f5e18 */ + cpu.ebx * 4);
+    // 004fd690  01f8                   -add eax, edi
+    (cpu.eax) += x86::reg32(x86::sreg32(cpu.edi));
+    // 004fd692  01eb                   -add ebx, ebp
+    (cpu.ebx) += x86::reg32(x86::sreg32(cpu.ebp));
+    // 004fd694  89c5                   -mov ebp, eax
+    cpu.ebp = cpu.eax;
+    // 004fd696  89d8                   -mov eax, ebx
+    cpu.eax = cpu.ebx;
+    // 004fd698  89df                   -mov edi, ebx
+    cpu.edi = cpu.ebx;
+    // 004fd69a  81e300f80f00           -and ebx, 0xff800
+    cpu.ebx &= x86::reg32(x86::sreg32(1046528 /*0xff800*/));
+    // 004fd6a0  c1e817                 -shr eax, 0x17
+    cpu.eax >>= 23 /*0x17*/ % 32;
+    // 004fd6a3  81e7ff010000           -and edi, 0x1ff
+    cpu.edi &= x86::reg32(x86::sreg32(511 /*0x1ff*/));
+    // 004fd6a9  c1eb0b                 -shr ebx, 0xb
+    cpu.ebx >>= 11 /*0xb*/ % 32;
+    // 004fd6ac  8b0dd8765600           -mov ecx, dword ptr [0x5676d8]
+    cpu.ecx = app->getMemory<x86::reg32>(x86::reg32(5666520) /* 0x5676d8 */);
+    // 004fd6b2  8b048550599f00         -mov eax, dword ptr [eax*4 + 0x9f5950]
+    cpu.eax = app->getMemory<x86::reg32>(x86::reg32(10443088) /* 0x9f5950 */ + cpu.eax * 4);
+    // 004fd6b9  8b3cbdb04f9f00         -mov edi, dword ptr [edi*4 + 0x9f4fb0]
+    cpu.edi = app->getMemory<x86::reg32>(x86::reg32(10440624) /* 0x9f4fb0 */ + cpu.edi * 4);
+    // 004fd6c0  8b1c9d38559f00         -mov ebx, dword ptr [ebx*4 + 0x9f5538]
+    cpu.ebx = app->getMemory<x86::reg32>(x86::reg32(10442040) /* 0x9f5538 */ + cpu.ebx * 4);
+    // 004fd6c7  01f8                   -add eax, edi
+    (cpu.eax) += x86::reg32(x86::sreg32(cpu.edi));
+    // 004fd6c9  01d8                   -add eax, ebx
+    (cpu.eax) += x86::reg32(x86::sreg32(cpu.ebx));
+    // 004fd6cb  81e5ffff0000           -and ebp, 0xffff
+    cpu.ebp &= x86::reg32(x86::sreg32(65535 /*0xffff*/));
+    // 004fd6d1  250000ffff             -and eax, 0xffff0000
+    cpu.eax &= x86::reg32(x86::sreg32(4294901760 /*0xffff0000*/));
+    // 004fd6d6  09e8                   +or eax, ebp
+    cpu.clear_co();
+    cpu.set_szp((cpu.eax |= x86::reg32(x86::sreg32(cpu.ebp))));
+    // 004fd6d8  49                     +dec ecx
+    {
+        x86::reg32& tmp = cpu.ecx;
+        cpu.flags.of = 1 & (tmp >> 31);
+        tmp--;
+        cpu.flags.of &= ~(1 & (tmp >> 31));
+        cpu.set_szp(tmp);
+    }
+    // 004fd6d9  890dd8765600           -mov dword ptr [0x5676d8], ecx
+    app->getMemory<x86::reg32>(x86::reg32(5666520) /* 0x5676d8 */) = cpu.ecx;
+    // 004fd6df  8902                   -mov dword ptr [edx], eax
+    app->getMemory<x86::reg32>(cpu.edx) = cpu.eax;
+    // 004fd6e1  8d5204                 -lea edx, [edx + 4]
+    cpu.edx = x86::reg32(cpu.edx + x86::reg32(4) /* 0x4 */);
+    // 004fd6e4  0f853effffff           -jne 0x4fd628
+    if (!cpu.flags.zf)
+    {
+        goto L_0x004fd628;
+    }
+    // 004fd6ea  5d                     -pop ebp
+    cpu.ebp = app->getMemory<x86::reg32>(cpu.esp);
+    cpu.esp += 4;
+    // 004fd6eb  5f                     -pop edi
+    cpu.edi = app->getMemory<x86::reg32>(cpu.esp);
+    cpu.esp += 4;
+    // 004fd6ec  5e                     -pop esi
+    cpu.esi = app->getMemory<x86::reg32>(cpu.esp);
+    cpu.esp += 4;
+    // 004fd6ed  59                     -pop ecx
+    cpu.ecx = app->getMemory<x86::reg32>(cpu.esp);
+    cpu.esp += 4;
+    // 004fd6ee  c3                     -ret 
+    cpu.esp += 4;
+    return;
+}
+
 /* align: skip  */
 void Application::sub_4fd6ef(WinApplication* app, x86::CPU& cpu)
 {
@@ -18862,591 +19296,6 @@ L_0x00501465:
     cpu.ecx = app->getMemory<x86::reg32>(cpu.esp);
     cpu.esp += 4;
     // 0050149f  c3                     -ret 
-    cpu.esp += 4;
-    return;
-}
-
-/* align: skip  */
-void Application::sub_5014a0(WinApplication* app, x86::CPU& cpu)
-{
-  NFS2_USE(cpu);
-  NFS2_USE(app);
-    // 005014a0  53                     -push ebx
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.ebx;
-    cpu.esp -= 4;
-    // 005014a1  51                     -push ecx
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.ecx;
-    cpu.esp -= 4;
-    // 005014a2  52                     -push edx
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.edx;
-    cpu.esp -= 4;
-    // 005014a3  8d0c8500000000         -lea ecx, [eax*4]
-    cpu.ecx = x86::reg32(cpu.eax * 4);
-    // 005014aa  29c1                   -sub ecx, eax
-    (cpu.ecx) -= x86::reg32(x86::sreg32(cpu.eax));
-    // 005014ac  c1e105                 -shl ecx, 5
-    cpu.ecx <<= 5 /*0x5*/ % 32;
-    // 005014af  81c13c9ba000           -add ecx, 0xa09b3c
-    (cpu.ecx) += x86::reg32(x86::sreg32(10525500 /*0xa09b3c*/));
-    // 005014b5  8b4120                 -mov eax, dword ptr [ecx + 0x20]
-    cpu.eax = app->getMemory<x86::reg32>(cpu.ecx + x86::reg32(32) /* 0x20 */);
-    // 005014b8  8b512d                 -mov edx, dword ptr [ecx + 0x2d]
-    cpu.edx = app->getMemory<x86::reg32>(cpu.ecx + x86::reg32(45) /* 0x2d */);
-    // 005014bb  c1f810                 -sar eax, 0x10
-    cpu.eax = x86::reg32(x86::sreg32(cpu.eax) >> (16 /*0x10*/ % 32));
-    // 005014be  c1fa18                 -sar edx, 0x18
-    cpu.edx = x86::reg32(x86::sreg32(cpu.edx) >> (24 /*0x18*/ % 32));
-    // 005014c1  0fafc2                 -imul eax, edx
-    cpu.eax = x86::reg32(x86::sreg64(x86::sreg32(cpu.eax)) * x86::sreg64(x86::sreg32(cpu.edx)));
-    // 005014c4  8b5128                 -mov edx, dword ptr [ecx + 0x28]
-    cpu.edx = app->getMemory<x86::reg32>(cpu.ecx + x86::reg32(40) /* 0x28 */);
-    // 005014c7  c1fa10                 -sar edx, 0x10
-    cpu.edx = x86::reg32(x86::sreg32(cpu.edx) >> (16 /*0x10*/ % 32));
-    // 005014ca  0fafc2                 -imul eax, edx
-    cpu.eax = x86::reg32(x86::sreg64(x86::sreg32(cpu.eax)) * x86::sreg64(x86::sreg32(cpu.edx)));
-    // 005014cd  8b15f29aa000           -mov edx, dword ptr [0xa09af2]
-    cpu.edx = app->getMemory<x86::reg32>(x86::reg32(10525426) /* 0xa09af2 */);
-    // 005014d3  c1fa18                 -sar edx, 0x18
-    cpu.edx = x86::reg32(x86::sreg32(cpu.edx) >> (24 /*0x18*/ % 32));
-    // 005014d6  0fafd0                 -imul edx, eax
-    cpu.edx = x86::reg32(x86::sreg64(x86::sreg32(cpu.edx)) * x86::sreg64(x86::sreg32(cpu.eax)));
-    // 005014d9  bb7f411f00             -mov ebx, 0x1f417f
-    cpu.ebx = 2048383 /*0x1f417f*/;
-    // 005014de  89d0                   -mov eax, edx
-    cpu.eax = cpu.edx;
-    // 005014e0  c1fa1f                 -sar edx, 0x1f
-    cpu.edx = x86::reg32(x86::sreg32(cpu.edx) >> (31 /*0x1f*/ % 32));
-    // 005014e3  f7fb                   -idiv ebx
-    {
-        x86::sreg64 tmp = x86::sreg64(cpu.edx_eax);
-        x86::sreg32 d = x86::sreg32(cpu.ebx);
-        cpu.edx_eax = x86::reg64(tmp / d);
-        cpu.edx = x86::reg32(tmp % d);
-    }
-    // 005014e5  8b5158                 -mov edx, dword ptr [ecx + 0x58]
-    cpu.edx = app->getMemory<x86::reg32>(cpu.ecx + x86::reg32(88) /* 0x58 */);
-    // 005014e8  884131                 -mov byte ptr [ecx + 0x31], al
-    app->getMemory<x86::reg8>(cpu.ecx + x86::reg32(49) /* 0x31 */) = cpu.al;
-    // 005014eb  85d2                   +test edx, edx
-    cpu.clear_co();
-    cpu.set_szp(static_cast<x86::reg32>(cpu.edx & cpu.edx));
-    // 005014ed  750b                   -jne 0x5014fa
-    if (!cpu.flags.zf)
-    {
-        goto L_0x005014fa;
-    }
-    // 005014ef  8b594c                 -mov ebx, dword ptr [ecx + 0x4c]
-    cpu.ebx = app->getMemory<x86::reg32>(cpu.ecx + x86::reg32(76) /* 0x4c */);
-    // 005014f2  85db                   +test ebx, ebx
-    cpu.clear_co();
-    cpu.set_szp(static_cast<x86::reg32>(cpu.ebx & cpu.ebx));
-    // 005014f4  7530                   -jne 0x501526
-    if (!cpu.flags.zf)
-    {
-        goto L_0x00501526;
-    }
-    // 005014f6  5a                     -pop edx
-    cpu.edx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 005014f7  59                     -pop ecx
-    cpu.ecx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 005014f8  5b                     -pop ebx
-    cpu.ebx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 005014f9  c3                     -ret 
-    cpu.esp += 4;
-    return;
-L_0x005014fa:
-    // 005014fa  31c0                   -xor eax, eax
-    cpu.eax ^= x86::reg32(x86::sreg32(cpu.eax));
-    // 005014fc  8a413e                 -mov al, byte ptr [ecx + 0x3e]
-    cpu.al = app->getMemory<x86::reg8>(cpu.ecx + x86::reg32(62) /* 0x3e */);
-    // 005014ff  0fbe1402               -movsx edx, byte ptr [edx + eax]
-    cpu.edx = x86::reg32(static_cast<x86::sreg8>(app->getMemory<x86::reg8>(cpu.edx + cpu.eax * 1)));
-    // 00501503  8b412e                 -mov eax, dword ptr [ecx + 0x2e]
-    cpu.eax = app->getMemory<x86::reg32>(cpu.ecx + x86::reg32(46) /* 0x2e */);
-    // 00501506  c1f818                 -sar eax, 0x18
-    cpu.eax = x86::reg32(x86::sreg32(cpu.eax) >> (24 /*0x18*/ % 32));
-    // 00501509  0fafd0                 -imul edx, eax
-    cpu.edx = x86::reg32(x86::sreg64(x86::sreg32(cpu.edx)) * x86::sreg64(x86::sreg32(cpu.eax)));
-    // 0050150c  bb7f000000             -mov ebx, 0x7f
-    cpu.ebx = 127 /*0x7f*/;
-    // 00501511  89d0                   -mov eax, edx
-    cpu.eax = cpu.edx;
-    // 00501513  c1fa1f                 -sar edx, 0x1f
-    cpu.edx = x86::reg32(x86::sreg32(cpu.edx) >> (31 /*0x1f*/ % 32));
-    // 00501516  f7fb                   -idiv ebx
-    {
-        x86::sreg64 tmp = x86::sreg64(cpu.edx_eax);
-        x86::sreg32 d = x86::sreg32(cpu.ebx);
-        cpu.edx_eax = x86::reg64(tmp / d);
-        cpu.edx = x86::reg32(tmp % d);
-    }
-    // 00501518  884131                 -mov byte ptr [ecx + 0x31], al
-    app->getMemory<x86::reg8>(cpu.ecx + x86::reg32(49) /* 0x31 */) = cpu.al;
-    // 0050151b  8b594c                 -mov ebx, dword ptr [ecx + 0x4c]
-    cpu.ebx = app->getMemory<x86::reg32>(cpu.ecx + x86::reg32(76) /* 0x4c */);
-    // 0050151e  85db                   +test ebx, ebx
-    cpu.clear_co();
-    cpu.set_szp(static_cast<x86::reg32>(cpu.ebx & cpu.ebx));
-    // 00501520  7504                   -jne 0x501526
-    if (!cpu.flags.zf)
-    {
-        goto L_0x00501526;
-    }
-    // 00501522  5a                     -pop edx
-    cpu.edx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 00501523  59                     -pop ecx
-    cpu.ecx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 00501524  5b                     -pop ebx
-    cpu.ebx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 00501525  c3                     -ret 
-    cpu.esp += 4;
-    return;
-L_0x00501526:
-    // 00501526  8b412e                 -mov eax, dword ptr [ecx + 0x2e]
-    cpu.eax = app->getMemory<x86::reg32>(cpu.ecx + x86::reg32(46) /* 0x2e */);
-    // 00501529  89da                   -mov edx, ebx
-    cpu.edx = cpu.ebx;
-    // 0050152b  c1f818                 -sar eax, 0x18
-    cpu.eax = x86::reg32(x86::sreg32(cpu.eax) >> (24 /*0x18*/ % 32));
-    // 0050152e  8a0402                 -mov al, byte ptr [edx + eax]
-    cpu.al = app->getMemory<x86::reg8>(cpu.edx + cpu.eax * 1);
-    // 00501531  884131                 -mov byte ptr [ecx + 0x31], al
-    app->getMemory<x86::reg8>(cpu.ecx + x86::reg32(49) /* 0x31 */) = cpu.al;
-    // 00501534  5a                     -pop edx
-    cpu.edx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 00501535  59                     -pop ecx
-    cpu.ecx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 00501536  5b                     -pop ebx
-    cpu.ebx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 00501537  c3                     -ret 
-    cpu.esp += 4;
-    return;
-}
-
-/* align: skip 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 */
-void Application::sub_501540(WinApplication* app, x86::CPU& cpu)
-{
-  NFS2_USE(cpu);
-  NFS2_USE(app);
-    // 00501540  53                     -push ebx
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.ebx;
-    cpu.esp -= 4;
-    // 00501541  51                     -push ecx
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.ecx;
-    cpu.esp -= 4;
-    // 00501542  56                     -push esi
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.esi;
-    cpu.esp -= 4;
-    // 00501543  57                     -push edi
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.edi;
-    cpu.esp -= 4;
-    // 00501544  55                     -push ebp
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.ebp;
-    cpu.esp -= 4;
-    // 00501545  83ec08                 -sub esp, 8
-    (cpu.esp) -= x86::reg32(x86::sreg32(8 /*0x8*/));
-    // 00501548  89c7                   -mov edi, eax
-    cpu.edi = cpu.eax;
-    // 0050154a  89d0                   -mov eax, edx
-    cpu.eax = cpu.edx;
-    // 0050154c  89fe                   -mov esi, edi
-    cpu.esi = cpu.edi;
-    // 0050154e  c1e604                 -shl esi, 4
-    cpu.esi <<= 4 /*0x4*/ % 32;
-    // 00501551  81c658f69e00           -add esi, 0x9ef658
-    (cpu.esi) += x86::reg32(x86::sreg32(10417752 /*0x9ef658*/));
-    // 00501557  8a5605                 -mov dl, byte ptr [esi + 5]
-    cpu.dl = app->getMemory<x86::reg8>(cpu.esi + x86::reg32(5) /* 0x5 */);
-    // 0050155a  84d2                   +test dl, dl
-    cpu.clear_co();
-    cpu.set_szp(static_cast<x86::reg8>(cpu.dl & cpu.dl));
-    // 0050155c  7545                   -jne 0x5015a3
-    if (!cpu.flags.zf)
-    {
-        goto L_0x005015a3;
-    }
-L_0x0050155e:
-    // 0050155e  807e0600               +cmp byte ptr [esi + 6], 0
-    {
-        x86::reg8 tmp1 = app->getMemory<x86::reg8>(cpu.esi + x86::reg32(6) /* 0x6 */);
-        x86::reg8 tmp2 = x86::reg8(x86::sreg8(0 /*0x0*/));
-        x86::reg8 result = tmp1 - tmp2;
-        cpu.flags.cf = tmp1 < tmp2;
-        cpu.flags.of = 1 & (tmp1 >> 7);
-        cpu.flags.of ^= 1 & (result >> 7);
-        cpu.flags.of &= (1 & (tmp1 >> 7)) != (1 & (tmp2 >> 7));
-        cpu.set_szp(result);
-    }
-    // 00501562  0f8496000000           -je 0x5015fe
-    if (cpu.flags.zf)
-    {
-        goto L_0x005015fe;
-    }
-    // 00501568  8d34bd00000000         -lea esi, [edi*4]
-    cpu.esi = x86::reg32(cpu.edi * 4);
-    // 0050156f  29fe                   -sub esi, edi
-    (cpu.esi) -= x86::reg32(x86::sreg32(cpu.edi));
-    // 00501571  c1e605                 -shl esi, 5
-    cpu.esi <<= 5 /*0x5*/ % 32;
-    // 00501574  8d4c2404               -lea ecx, [esp + 4]
-    cpu.ecx = x86::reg32(cpu.esp + x86::reg32(4) /* 0x4 */);
-    // 00501578  8bb6489ba000           -mov esi, dword ptr [esi + 0xa09b48]
-    cpu.esi = app->getMemory<x86::reg32>(cpu.esi + x86::reg32(10525512) /* 0xa09b48 */);
-    // 0050157e  89e3                   -mov ebx, esp
-    cpu.ebx = cpu.esp;
-    // 00501580  c1fe18                 -sar esi, 0x18
-    cpu.esi = x86::reg32(x86::sreg32(cpu.esi) >> (24 /*0x18*/ % 32));
-    // 00501583  89c2                   -mov edx, eax
-    cpu.edx = cpu.eax;
-    // 00501585  89f0                   -mov eax, esi
-    cpu.eax = cpu.esi;
-    // 00501587  e8640d0200             -call 0x5222f0
-    cpu.esp -= 4;
-    sub_5222f0(app, cpu);
-    if (cpu.terminate) return;
-L_0x0050158c:
-    // 0050158c  8b5c2404               -mov ebx, dword ptr [esp + 4]
-    cpu.ebx = app->getMemory<x86::reg32>(cpu.esp + x86::reg32(4) /* 0x4 */);
-    // 00501590  8b1424                 -mov edx, dword ptr [esp]
-    cpu.edx = app->getMemory<x86::reg32>(cpu.esp);
-    // 00501593  89f8                   -mov eax, edi
-    cpu.eax = cpu.edi;
-    // 00501595  e80af1ffff             -call 0x5006a4
-    cpu.esp -= 4;
-    sub_5006a4(app, cpu);
-    if (cpu.terminate) return;
-    // 0050159a  83c408                 -add esp, 8
-    (cpu.esp) += x86::reg32(x86::sreg32(8 /*0x8*/));
-    // 0050159d  5d                     -pop ebp
-    cpu.ebp = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 0050159e  5f                     -pop edi
-    cpu.edi = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 0050159f  5e                     -pop esi
-    cpu.esi = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 005015a0  59                     -pop ecx
-    cpu.ecx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 005015a1  5b                     -pop ebx
-    cpu.ebx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 005015a2  c3                     -ret 
-    cpu.esp += 4;
-    return;
-L_0x005015a3:
-    // 005015a3  80fa02                 +cmp dl, 2
-    {
-        x86::reg8 tmp1 = cpu.dl;
-        x86::reg8 tmp2 = x86::reg8(x86::sreg8(2 /*0x2*/));
-        x86::reg8 result = tmp1 - tmp2;
-        cpu.flags.cf = tmp1 < tmp2;
-        cpu.flags.of = 1 & (tmp1 >> 7);
-        cpu.flags.of ^= 1 & (result >> 7);
-        cpu.flags.of &= (1 & (tmp1 >> 7)) != (1 & (tmp2 >> 7));
-        cpu.set_szp(result);
-    }
-    // 005015a6  74b6                   -je 0x50155e
-    if (cpu.flags.zf)
-    {
-        goto L_0x0050155e;
-    }
-    // 005015a8  80fa01                 +cmp dl, 1
-    {
-        x86::reg8 tmp1 = cpu.dl;
-        x86::reg8 tmp2 = x86::reg8(x86::sreg8(1 /*0x1*/));
-        x86::reg8 result = tmp1 - tmp2;
-        cpu.flags.cf = tmp1 < tmp2;
-        cpu.flags.of = 1 & (tmp1 >> 7);
-        cpu.flags.of ^= 1 & (result >> 7);
-        cpu.flags.of &= (1 & (tmp1 >> 7)) != (1 & (tmp2 >> 7));
-        cpu.set_szp(result);
-    }
-    // 005015ab  756f                   -jne 0x50161c
-    if (!cpu.flags.zf)
-    {
-        goto L_0x0050161c;
-    }
-    // 005015ad  807e0600               +cmp byte ptr [esi + 6], 0
-    {
-        x86::reg8 tmp1 = app->getMemory<x86::reg8>(cpu.esi + x86::reg32(6) /* 0x6 */);
-        x86::reg8 tmp2 = x86::reg8(x86::sreg8(0 /*0x0*/));
-        x86::reg8 result = tmp1 - tmp2;
-        cpu.flags.cf = tmp1 < tmp2;
-        cpu.flags.of = 1 & (tmp1 >> 7);
-        cpu.flags.of ^= 1 & (result >> 7);
-        cpu.flags.of &= (1 & (tmp1 >> 7)) != (1 & (tmp2 >> 7));
-        cpu.set_szp(result);
-    }
-    // 005015b1  741d                   -je 0x5015d0
-    if (cpu.flags.zf)
-    {
-        goto L_0x005015d0;
-    }
-    // 005015b3  89f9                   -mov ecx, edi
-    cpu.ecx = cpu.edi;
-    // 005015b5  8d148d00000000         -lea edx, [ecx*4]
-    cpu.edx = x86::reg32(cpu.ecx * 4);
-    // 005015bc  29ca                   -sub edx, ecx
-    (cpu.edx) -= x86::reg32(x86::sreg32(cpu.ecx));
-    // 005015be  c1e205                 -shl edx, 5
-    cpu.edx <<= 5 /*0x5*/ % 32;
-    // 005015c1  8baa489ba000           -mov ebp, dword ptr [edx + 0xa09b48]
-    cpu.ebp = app->getMemory<x86::reg32>(cpu.edx + x86::reg32(10525512) /* 0xa09b48 */);
-    // 005015c7  c1fd18                 -sar ebp, 0x18
-    cpu.ebp = x86::reg32(x86::sreg32(cpu.ebp) >> (24 /*0x18*/ % 32));
-    // 005015ca  83ed40                 -sub ebp, 0x40
-    (cpu.ebp) -= x86::reg32(x86::sreg32(64 /*0x40*/));
-    // 005015cd  c1e508                 -shl ebp, 8
-    cpu.ebp <<= 8 /*0x8*/ % 32;
-L_0x005015d0:
-    // 005015d0  8b5606                 -mov edx, dword ptr [esi + 6]
-    cpu.edx = app->getMemory<x86::reg32>(cpu.esi + x86::reg32(6) /* 0x6 */);
-    // 005015d3  c1fa18                 -sar edx, 0x18
-    cpu.edx = x86::reg32(x86::sreg32(cpu.edx) >> (24 /*0x18*/ % 32));
-    // 005015d6  52                     -push edx
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.edx;
-    cpu.esp -= 4;
-    // 005015d7  8b5605                 -mov edx, dword ptr [esi + 5]
-    cpu.edx = app->getMemory<x86::reg32>(cpu.esi + x86::reg32(5) /* 0x5 */);
-    // 005015da  8d4c2408               -lea ecx, [esp + 8]
-    cpu.ecx = x86::reg32(cpu.esp + x86::reg32(8) /* 0x8 */);
-    // 005015de  c1fa18                 +sar edx, 0x18
-    {
-        x86::reg8 tmp = 24 /*0x18*/ % 32;
-        x86::reg32& op = cpu.edx;
-        if (tmp)
-        {
-            cpu.flags.cf = 1 & (x86::sreg32(op) >> (tmp - 1));
-            if (tmp == 1) cpu.flags.of = 0;
-            cpu.set_szp((op = x86::reg32(x86::sreg32(op) >> tmp)));
-        }
-    }
-    // 005015e1  8d5c2404               -lea ebx, [esp + 4]
-    cpu.ebx = x86::reg32(cpu.esp + x86::reg32(4) /* 0x4 */);
-    // 005015e5  52                     -push edx
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.edx;
-    cpu.esp -= 4;
-    // 005015e6  89c2                   -mov edx, eax
-    cpu.edx = cpu.eax;
-    // 005015e8  89e8                   -mov eax, ebp
-    cpu.eax = cpu.ebp;
-    // 005015ea  e8310d0200             -call 0x522320
-    cpu.esp -= 4;
-    sub_522320(app, cpu);
-    if (cpu.terminate) return;
-    // 005015ef  8a0424                 -mov al, byte ptr [esp]
-    cpu.al = app->getMemory<x86::reg8>(cpu.esp);
-    // 005015f2  884608                 -mov byte ptr [esi + 8], al
-    app->getMemory<x86::reg8>(cpu.esi + x86::reg32(8) /* 0x8 */) = cpu.al;
-    // 005015f5  8a442404               -mov al, byte ptr [esp + 4]
-    cpu.al = app->getMemory<x86::reg8>(cpu.esp + x86::reg32(4) /* 0x4 */);
-    // 005015f9  884609                 -mov byte ptr [esi + 9], al
-    app->getMemory<x86::reg8>(cpu.esi + x86::reg32(9) /* 0x9 */) = cpu.al;
-    // 005015fc  eb8e                   -jmp 0x50158c
-    goto L_0x0050158c;
-L_0x005015fe:
-    // 005015fe  668b760a               -mov si, word ptr [esi + 0xa]
-    cpu.si = app->getMemory<x86::reg16>(cpu.esi + x86::reg32(10) /* 0xa */);
-    // 00501602  8d4c2404               -lea ecx, [esp + 4]
-    cpu.ecx = x86::reg32(cpu.esp + x86::reg32(4) /* 0x4 */);
-    // 00501606  89e3                   -mov ebx, esp
-    cpu.ebx = cpu.esp;
-    // 00501608  81e6ffff0000           +and esi, 0xffff
-    cpu.clear_co();
-    cpu.set_szp((cpu.esi &= x86::reg32(x86::sreg32(65535 /*0xffff*/))));
-    // 0050160e  89c2                   -mov edx, eax
-    cpu.edx = cpu.eax;
-    // 00501610  89f0                   -mov eax, esi
-    cpu.eax = cpu.esi;
-    // 00501612  e8990e0200             -call 0x5224b0
-    cpu.esp -= 4;
-    sub_5224b0(app, cpu);
-    if (cpu.terminate) return;
-    // 00501617  e970ffffff             -jmp 0x50158c
-    goto L_0x0050158c;
-L_0x0050161c:
-    // 0050161c  80fa03                 +cmp dl, 3
-    {
-        x86::reg8 tmp1 = cpu.dl;
-        x86::reg8 tmp2 = x86::reg8(x86::sreg8(3 /*0x3*/));
-        x86::reg8 result = tmp1 - tmp2;
-        cpu.flags.cf = tmp1 < tmp2;
-        cpu.flags.of = 1 & (tmp1 >> 7);
-        cpu.flags.of ^= 1 & (result >> 7);
-        cpu.flags.of &= (1 & (tmp1 >> 7)) != (1 & (tmp2 >> 7));
-        cpu.set_szp(result);
-    }
-    // 0050161f  7433                   -je 0x501654
-    if (cpu.flags.zf)
-    {
-        goto L_0x00501654;
-    }
-    // 00501621  baa8e55400             -mov edx, 0x54e5a8
-    cpu.edx = 5563816 /*0x54e5a8*/;
-    // 00501626  b9b4e55400             -mov ecx, 0x54e5b4
-    cpu.ecx = 5563828 /*0x54e5b4*/;
-    // 0050162b  bb30000000             -mov ebx, 0x30
-    cpu.ebx = 48 /*0x30*/;
-    // 00501630  68bce55400             -push 0x54e5bc
-    app->getMemory<x86::reg32>(cpu.esp-4) = 5563836 /*0x54e5bc*/;
-    cpu.esp -= 4;
-    // 00501635  891590215500           -mov dword ptr [0x552190], edx
-    app->getMemory<x86::reg32>(x86::reg32(5579152) /* 0x552190 */) = cpu.edx;
-    // 0050163b  890d94215500           -mov dword ptr [0x552194], ecx
-    app->getMemory<x86::reg32>(x86::reg32(5579156) /* 0x552194 */) = cpu.ecx;
-    // 00501641  891d98215500           -mov dword ptr [0x552198], ebx
-    app->getMemory<x86::reg32>(x86::reg32(5579160) /* 0x552198 */) = cpu.ebx;
-    // 00501647  e8c4f9efff             -call 0x401010
-    cpu.esp -= 4;
-    sub_401010(app, cpu);
-    if (cpu.terminate) return;
-    // 0050164c  83c404                 +add esp, 4
-    {
-        x86::reg32& tmp1 = cpu.esp;
-        x86::reg32 tmp2 = x86::reg32(x86::sreg32(4 /*0x4*/));
-        x86::reg32 result = tmp1 + tmp2;
-        cpu.flags.of = 1 & (tmp1 >> 31);
-        cpu.flags.of ^= 1 & (result >> 31);
-        cpu.flags.of &= (1 & (tmp1 >> 31)) == (1 & (tmp2 >> 31));
-        cpu.flags.cf = result < tmp1;
-        tmp1 = result;
-        cpu.set_szp(tmp1);
-    }
-    // 0050164f  e938ffffff             -jmp 0x50158c
-    goto L_0x0050158c;
-L_0x00501654:
-    // 00501654  50                     -push eax
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.eax;
-    cpu.esp -= 4;
-    // 00501655  57                     -push edi
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.edi;
-    cpu.esp -= 4;
-    // 00501656  ff1548f69e00           -call dword ptr [0x9ef648]
-    cpu.ip = app->getMemory<x86::reg32>(x86::reg32(10417736) /* 0x9ef648 */);
-    cpu.esp -= 4;
-    app->dynamic_call(cpu.ip, cpu);
-    if (cpu.terminate) return;
-    // 0050165c  83c408                 -add esp, 8
-    (cpu.esp) += x86::reg32(x86::sreg32(8 /*0x8*/));
-    // 0050165f  5d                     -pop ebp
-    cpu.ebp = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 00501660  5f                     -pop edi
-    cpu.edi = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 00501661  5e                     -pop esi
-    cpu.esi = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 00501662  59                     -pop ecx
-    cpu.ecx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 00501663  5b                     -pop ebx
-    cpu.ebx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 00501664  c3                     -ret 
-    cpu.esp += 4;
-    return;
-}
-
-/* align: skip 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 */
-void Application::sub_501670(WinApplication* app, x86::CPU& cpu)
-{
-  NFS2_USE(cpu);
-  NFS2_USE(app);
-    // 00501670  52                     -push edx
-    app->getMemory<x86::reg32>(cpu.esp-4) = cpu.edx;
-    cpu.esp -= 4;
-    // 00501671  89c2                   -mov edx, eax
-    cpu.edx = cpu.eax;
-    // 00501673  803df49aa00000         +cmp byte ptr [0xa09af4], 0
-    {
-        x86::reg8 tmp1 = app->getMemory<x86::reg8>(x86::reg32(10525428) /* 0xa09af4 */);
-        x86::reg8 tmp2 = x86::reg8(x86::sreg8(0 /*0x0*/));
-        x86::reg8 result = tmp1 - tmp2;
-        cpu.flags.cf = tmp1 < tmp2;
-        cpu.flags.of = 1 & (tmp1 >> 7);
-        cpu.flags.of ^= 1 & (result >> 7);
-        cpu.flags.of &= (1 & (tmp1 >> 7)) != (1 & (tmp2 >> 7));
-        cpu.set_szp(result);
-    }
-    // 0050167a  7507                   -jne 0x501683
-    if (!cpu.flags.zf)
-    {
-        goto L_0x00501683;
-    }
-    // 0050167c  b8f6ffffff             -mov eax, 0xfffffff6
-    cpu.eax = 4294967286 /*0xfffffff6*/;
-    // 00501681  5a                     -pop edx
-    cpu.edx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 00501682  c3                     -ret 
-    cpu.esp += 4;
-    return;
-L_0x00501683:
-    // 00501683  e898f7ffff             -call 0x500e20
-    cpu.esp -= 4;
-    sub_500e20(app, cpu);
-    if (cpu.terminate) return;
-    // 00501688  89d0                   -mov eax, edx
-    cpu.eax = cpu.edx;
-    // 0050168a  e80de6ffff             -call 0x4ffc9c
-    cpu.esp -= 4;
-    sub_4ffc9c(app, cpu);
-    if (cpu.terminate) return;
-    // 0050168f  89c2                   -mov edx, eax
-    cpu.edx = cpu.eax;
-    // 00501691  85c0                   +test eax, eax
-    cpu.clear_co();
-    cpu.set_szp(static_cast<x86::reg32>(cpu.eax & cpu.eax));
-    // 00501693  7c1a                   -jl 0x5016af
-    if (cpu.flags.sf != cpu.flags.of)
-    {
-        goto L_0x005016af;
-    }
-    // 00501695  e8e2f7ffff             -call 0x500e7c
-    cpu.esp -= 4;
-    sub_500e7c(app, cpu);
-    if (cpu.terminate) return;
-    // 0050169a  89d0                   -mov eax, edx
-    cpu.eax = cpu.edx;
-    // 0050169c  c1e002                 -shl eax, 2
-    cpu.eax <<= 2 /*0x2*/ % 32;
-    // 0050169f  29d0                   -sub eax, edx
-    (cpu.eax) -= x86::reg32(x86::sreg32(cpu.edx));
-    // 005016a1  c1e005                 -shl eax, 5
-    cpu.eax <<= 5 /*0x5*/ % 32;
-    // 005016a4  8b806a9ba000           -mov eax, dword ptr [eax + 0xa09b6a]
-    cpu.eax = app->getMemory<x86::reg32>(cpu.eax + x86::reg32(10525546) /* 0xa09b6a */);
-    // 005016aa  c1f818                 -sar eax, 0x18
-    cpu.eax = x86::reg32(x86::sreg32(cpu.eax) >> (24 /*0x18*/ % 32));
-    // 005016ad  5a                     -pop edx
-    cpu.edx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 005016ae  c3                     -ret 
-    cpu.esp += 4;
-    return;
-L_0x005016af:
-    // 005016af  e8c8f7ffff             -call 0x500e7c
-    cpu.esp -= 4;
-    sub_500e7c(app, cpu);
-    if (cpu.terminate) return;
-    // 005016b4  b8f8ffffff             -mov eax, 0xfffffff8
-    cpu.eax = 4294967288 /*0xfffffff8*/;
-    // 005016b9  5a                     -pop edx
-    cpu.edx = app->getMemory<x86::reg32>(cpu.esp);
-    cpu.esp += 4;
-    // 005016ba  c3                     -ret 
     cpu.esp += 4;
     return;
 }

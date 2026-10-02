@@ -54,7 +54,10 @@ SKIP_INSTRUCTIONS = [a for a in original.SKIP_INSTRUCTIONS if a != 0x4a3aec]
 # call to them fails.
 # 0x4cccc4..0x4ccd98: new stdcall callbacks registered through 0x4cc6d0.
 PATCH_CALLBACKS = [0x4cccc4, 0x4ccce4, 0x4ccd04, 0x4ccd78, 0x4ccd98]
-KNOWN_SUBROUTINES = original.KNOWN_SUBROUTINES + PATCH_CALLBACKS + [
+# Original functions the patch changed but still references through pointer
+# tables in its data (menu callbacks); two of them are now NOP-filled stubs.
+POINTER_TARGETS = [0x405fc0, 0x448440, 0x478000]
+KNOWN_SUBROUTINES = original.KNOWN_SUBROUTINES + PATCH_CALLBACKS + POINTER_TARGETS + [
     0x408af0, 0x418670, 0x437990, 0x43d5f0, 0x43ebc0, 0x43f7e0,
     0x43fee0, 0x4405c0, 0x443260, 0x446740, 0x448570, 0x453ef0,
     0x45d300, 0x45d630, 0x45d840, 0x45d9a0, 0x490430, 0x496300,

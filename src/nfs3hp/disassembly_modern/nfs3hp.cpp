@@ -143,6 +143,7 @@ Application::Application(const char* appName)
     registerMethod(0x00405e60, {"<Application>sub_405e60", &Application::sub_405e60});
     registerMethod(0x00405fb0, {"<Application>sub_405fb0", &Application::sub_405fb0});
     registerMethod(0x00405fd0, {"<Application>sub_405fd0", &Application::sub_405fd0});
+    registerMethod(0x00405fc0, {"<Application>sub_405fc0", &Application::sub_405fc0});
     registerMethod(0x004060d0, {"<Application>sub_4060d0", &Application::sub_4060d0});
     registerMethod(0x00406120, {"<Application>sub_406120", &Application::sub_406120});
     registerMethod(0x00406160, {"<Application>sub_406160", &Application::sub_406160});
@@ -1406,6 +1407,7 @@ Application::Application(const char* appName)
     registerMethod(0x00448426, {"<Application>sub_448426", &Application::sub_448426});
     registerMethod(0x00448428, {"<Application>sub_448428", &Application::sub_448428});
     registerMethod(0x0044843a, {"<Application>sub_44843a", &Application::sub_44843a});
+    registerMethod(0x00448440, {"<Application>sub_448440", &Application::sub_448440});
     registerMethod(0x00448460, {"<Application>sub_448460", &Application::sub_448460});
     registerMethod(0x00448464, {"<Application>sub_448464", &Application::sub_448464});
     registerMethod(0x004484ba, {"<Application>sub_4484ba", &Application::sub_4484ba});
@@ -2182,6 +2184,7 @@ Application::Application(const char* appName)
     registerMethod(0x00477f60, {"<Application>sub_477f60", &Application::sub_477f60});
     registerMethod(0x00477fd0, {"<Application>sub_477fd0", &Application::sub_477fd0});
     registerMethod(0x00478010, {"<Application>sub_478010", &Application::sub_478010});
+    registerMethod(0x00478000, {"<Application>sub_478000", &Application::sub_478000});
     registerMethod(0x00478090, {"<Application>sub_478090", &Application::sub_478090});
     registerMethod(0x00478100, {"<Application>sub_478100", &Application::sub_478100});
     registerMethod(0x004781b0, {"<Application>sub_4781b0", &Application::sub_4781b0});
