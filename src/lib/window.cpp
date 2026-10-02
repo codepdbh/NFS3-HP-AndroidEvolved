@@ -42,19 +42,19 @@ void Window::setWideRenderAllowed(bool allowed) { s_wideRenderAllowed = allowed;
 /**
  * The Modern Patch adapts field of view and HUD to whatever grSstScreenWidth and
  * grSstScreenHeight report, as it does with nGlide's desktop resolution. Race
- * modes are widened to the display aspect; 640x480 is left alone because the
- * front end is laid out for it.
+ * modes are rendered at the display's own resolution (or its height at 16:9);
+ * 640x480 is left alone because the front end is laid out for it.
  */
 void Window::widenRenderSize(int& width, int& height) {
     if(!s_wideRenderAllowed || (width==640 && height==480)) return;
-    float target=s_displayAspect.load();
-    if(target==0) {
-        SDL_DisplayMode mode;
-        if(SDL_GetDesktopDisplayMode(0,&mode)!=0 || mode.w<=0 || mode.h<=0) return;
-        target=float(std::max(mode.w,mode.h))/float(std::min(mode.w,mode.h));
-    }
-    if(target<=float(width)/float(height)+0.01f) return;
-    width=std::min(int(height*target+0.5f) & ~7, 2048);
+    const float aspect=s_displayAspect.load();
+    if(aspect<0) return;  // original 4:3 picture
+    SDL_DisplayMode mode;
+    if(SDL_GetDesktopDisplayMode(0,&mode)!=0 || mode.w<=0 || mode.h<=0) return;
+    const int screenWidth=std::max(mode.w,mode.h), screenHeight=std::min(mode.w,mode.h);
+    height=std::min(screenHeight, MAX_RENDER_HEIGHT);
+    width=aspect==0 ? screenWidth*height/screenHeight : int(height*aspect+0.5f);
+    width=std::min(width & ~1, MAX_RENDER_WIDTH);
 }
 
 void Window::getViewport(int width, int height, float& left, float& top, float& scaleX, float& scaleY) {

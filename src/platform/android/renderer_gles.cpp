@@ -21,7 +21,7 @@ static GLuint shader(GLenum type, const char* source) {
 }
 Renderer::Renderer(WinApplication* app, Window* window)
     : m_application(app), m_window(window), m_renderer(SDL_GL_CreateContext(window->m_window)),
-      m_texture(0), m_videoMemory(new MemMap(2048*1024*2*2)), m_currentBuffer(0),
+      m_texture(0), m_videoMemory(new MemMap(1024*768*2*2)), m_currentBuffer(0),
       m_width(640), m_height(480), m_depth(16), m_colorPalette{} {
     if (!m_renderer) SDL_LogError(SDL_LOG_CATEGORY_RENDER, "[NFS3][VIDEO] GLES context: %s", SDL_GetError());
     NFS2_ASSERT(m_renderer);
@@ -53,7 +53,9 @@ void Renderer::clearCurrent(){ SDL_GL_MakeCurrent(m_window->m_window,nullptr); }
 void Renderer::setVideoMode(x86::reg32 w,x86::reg32 h,x86::reg32 bpp){
     SDL_Log("[NFS3][VIDEO] Mode %ux%u depth %u", w,h,bpp);
     Window::setRenderSize(w,h);
-    NFS2_ASSERT(w && h && w<=2048 && h<=1024);
+    NFS2_ASSERT(w && h && int(w)<=Window::MAX_RENDER_WIDTH && int(h)<=Window::MAX_RENDER_HEIGHT);
+    // Two 16-bit pages for the linear frame buffer, grown for native resolutions.
+    if(m_videoMemory->getBlockSize()<w*h*2*2){delete m_videoMemory;m_videoMemory=new MemMap(w*h*2*2);}
     m_width=w;m_height=h;m_depth=bpp;setCurrent();glBindTexture(GL_TEXTURE_2D,m_texture);
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,w,h,0,GL_RGBA,GL_UNSIGNED_BYTE,nullptr);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);

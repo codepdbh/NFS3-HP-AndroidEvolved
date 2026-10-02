@@ -109,11 +109,11 @@ el juego original: `nfs3hp_modern/nfs3.exe` →
   este runtime no implementa; el `.exe` habla con el driver por `THRASH_*`.
 * Funciones añadidas para el parche: heap del proceso, `GetPrivateProfile*`
   (`nfs3.ini`, `thrash.ini`), recursos PE, `timeGetTime` y `PlaySoundA`.
-* **Panorámica real**: con el modo Completa o 16:9, Glide ensancha las resoluciones
-  de carrera a la proporción de la pantalla y el parche adapta campo de visión y
-  HUD, como con nGlide a resolución de escritorio. 640×480 (menús) no cambia, así
-  que elige 800×600 o más en Opciones → Gráficos. Activa también *Wide Screen* /
-  *View Angle* en Gráficos avanzados si quieres más campo de visión.
+* **Resolución nativa y panorámica real**: con el modo Completa, cualquier
+  resolución de carrera que elijas en Opciones → Gráficos (800×600 o más) se
+  renderiza a la resolución de la pantalla del móvil (p. ej. 2340×1080); con 16:9,
+  a su altura en 16:9. El parche adapta campo de visión y HUD a ese tamaño, como
+  con nGlide a resolución de escritorio. 640×480 se deja para los menús.
 
 Datos: el parche necesita sus propios menús, textos, HUD y logos. Cópialos desde la
 carpeta del parche (guarda en el móvil una copia de lo que reemplaza):

@@ -35,6 +35,7 @@ public:
     static int getRenderWidth();
     /** Lets Glide widen race resolutions to the screen's aspect (Modern Patch only). */
     static void setWideRenderAllowed(bool allowed);
+    static const int MAX_RENDER_WIDTH = 3840, MAX_RENDER_HEIGHT = 2160;
     static void widenRenderSize(int& width, int& height);
     static void getViewport(int width, int height, float& left, float& top, float& scaleX, float& scaleY);
     static bool setCursorPosition(int x, int y);
