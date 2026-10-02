@@ -323,18 +323,38 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
             || (source & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK;
     }
 
+    /**
+     * A real controller: some phones expose built-in parts as joysticks (Xiaomi's
+     * uinput-fpc fingerprint reader reports KEYBOARD | JOYSTICK), so require a
+     * gamepad source, or a joystick with stick axes and controller buttons.
+     */
+    private static boolean isGamepadDevice(InputDevice device) {
+        if (device == null || device.isVirtual()) return false;
+        int sources = device.getSources();
+        if ((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD) return true;
+        if ((sources & InputDevice.SOURCE_JOYSTICK) != InputDevice.SOURCE_JOYSTICK) return false;
+        if (device.getMotionRange(MotionEvent.AXIS_X) == null || device.getMotionRange(MotionEvent.AXIS_Y) == null) return false;
+        boolean[] buttons = device.hasKeys(KeyEvent.KEYCODE_BUTTON_A, KeyEvent.KEYCODE_BUTTON_B, KeyEvent.KEYCODE_BUTTON_START);
+        return buttons[0] || buttons[1] || buttons[2];
+    }
+
+    /** Whether an input event comes from a real controller. */
+    private static boolean isGamepadEvent(android.view.InputEvent event) {
+        return isGamepad(event.getSource()) && isGamepadDevice(event.getDevice());
+    }
+
     /** Name of the first physical gamepad, or null. */
     private static String gamepadName() {
         for (int id : InputDevice.getDeviceIds()) {
             InputDevice device = InputDevice.getDevice(id);
-            if (device != null && !device.isVirtual() && isGamepad(device.getSources())) return device.getName();
+            if (isGamepadDevice(device)) return device.getName();
         }
         return null;
     }
 
     @Override public void onInputDeviceAdded(int id) {
         InputDevice device = InputDevice.getDevice(id);
-        if (device != null && !device.isVirtual() && isGamepad(device.getSources()))
+        if (isGamepadDevice(device))
             Toast.makeText(this, "Mando conectado: " + device.getName(), Toast.LENGTH_SHORT).show();
         if (controls != null) controls.setGamepadMode(gamepadName() != null);
     }
@@ -365,7 +385,7 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
     }
 
     @Override public boolean dispatchKeyEvent(KeyEvent event) {
-        if (controls != null && event.getKeyCode() == KeyEvent.KEYCODE_BACK && !isGamepad(event.getSource())) {
+        if (controls != null && event.getKeyCode() == KeyEvent.KEYCODE_BACK && !isGamepadEvent(event)) {
             // Android's back gesture/button acts as the game's Escape (back in menus, pause in a race).
             if (event.getRepeatCount() == 0) {
                 if (event.getAction() == KeyEvent.ACTION_DOWN) input.press(KeyEvent.KEYCODE_ESCAPE);
@@ -373,7 +393,7 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
             }
             return true;
         }
-        if (controls == null || !isGamepad(event.getSource())) return super.dispatchKeyEvent(event);
+        if (controls == null || !isGamepadEvent(event)) return super.dispatchKeyEvent(event);
         int code = event.getKeyCode();
         boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
         if (code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT) {
@@ -394,7 +414,7 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
     }
 
     @Override public boolean dispatchGenericMotionEvent(MotionEvent event) {
-        if (controls == null || !isGamepad(event.getSource()) || event.getActionMasked() != MotionEvent.ACTION_MOVE)
+        if (controls == null || !isGamepadEvent(event) || event.getActionMasked() != MotionEvent.ACTION_MOVE)
             return super.dispatchGenericMotionEvent(event);
         padStickSteer = event.getAxisValue(MotionEvent.AXIS_X);
         float hatX = event.getAxisValue(MotionEvent.AXIS_HAT_X);
