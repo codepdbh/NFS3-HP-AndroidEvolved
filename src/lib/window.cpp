@@ -36,29 +36,6 @@ void Window::setDisplayAspect(float aspect) { s_displayAspect.store(aspect); }
 
 int Window::getRenderWidth() { return s_renderWidth; }
 
-static bool s_wideRenderAllowed = false;
-
-void Window::setWideRenderAllowed(bool allowed) { s_wideRenderAllowed = allowed; }
-
-/**
- * The Modern Patch adapts field of view and HUD to whatever grSstScreenWidth and
- * grSstScreenHeight report, as it does with nGlide's desktop resolution. Race
- * modes are widened to the display aspect (Full) or 16:9; 640x480 is left alone
- * because the front end is laid out for it. outputSize() then scales the result.
- */
-void Window::widenRenderSize(int& width, int& height) {
-    if(!s_wideRenderAllowed || (width==640 && height==480)) return;
-    float target=s_displayAspect.load();
-    if(target<0) return;  // original 4:3 picture
-    if(target==0) {
-        SDL_DisplayMode mode;
-        if(SDL_GetDesktopDisplayMode(0,&mode)!=0 || mode.w<=0 || mode.h<=0) return;
-        target=float(std::max(mode.w,mode.h))/float(std::min(mode.w,mode.h));
-    }
-    if(target<=float(width)/float(height)+0.01f) return;
-    width=std::min(int(height*target+0.5f) & ~7, MAX_RENDER_WIDTH);
-}
-
 // Output height for supersampling: 0 = the display's height, -1 = game resolution.
 static std::atomic<int> s_outputHeight{0};
 static std::atomic<int> s_fpsLimit{60};

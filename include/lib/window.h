@@ -33,10 +33,7 @@ public:
     static void setRenderSize(int width, int height);
     static void setDisplayAspect(float aspect);
     static int getRenderWidth();
-    /** Lets Glide widen race resolutions to the screen's aspect (Modern Patch only). */
-    static void setWideRenderAllowed(bool allowed);
     static const int MAX_RENDER_WIDTH = 3840, MAX_RENDER_HEIGHT = 2160;
-    static void widenRenderSize(int& width, int& height);
     /** Size the GPU draws a Glide frame at (supersampling to the chosen height). */
     static void outputSize(int& width, int& height);
     static void setOutputHeight(int height);

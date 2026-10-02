@@ -109,11 +109,11 @@ el juego original: `nfs3hp_modern/nfs3.exe` →
   este runtime no implementa; el `.exe` habla con el driver por `THRASH_*`.
 * Funciones añadidas para el parche: heap del proceso, `GetPrivateProfile*`
   (`nfs3.ini`, `thrash.ini`), recursos PE, `timeGetTime` y `PlaySoundA`.
-* **Resolución nativa y panorámica real**: con el modo Completa, cualquier
-  resolución de carrera que elijas en Opciones → Gráficos (800×600 o más) se
-  renderiza a la resolución de la pantalla del móvil (p. ej. 2340×1080); con 16:9,
-  a su altura en 16:9. El parche adapta campo de visión y HUD a ese tamaño, como
-  con nGlide a resolución de escritorio. 640×480 se deja para los menús.
+* **Resolución**: el menú de inicio elige a qué altura se dibuja el juego
+  (nativa, 900p, 720p, 540p o la del juego). Glide dibuja el 3D a esa altura
+  aunque el juego trabaje a 640×480 o 1024×768 (supersampling) y el modo
+  Completa lo estira a toda la pantalla. El parche no adapta el campo de visión
+  con el driver Voodoo2 original, así que no hay panorámica Hor+.
 
 Datos: el parche necesita sus propios menús, textos, HUD y logos. Cópialos desde la
 carpeta del parche (guarda en el móvil una copia de lo que reemplaza):

@@ -473,12 +473,6 @@ static x86::reg32 grSstWinOpen(WinApplication* app, x86::CPU& cpu, HWND hWnd,
         height = 480;
         break;
     }
-    {
-        int wide = width, tall = height;
-        Window::widenRenderSize(wide, tall);
-        if (wide != width) SDL_Log("[NFS3][GLIDE] Widescreen %dx%d -> %dx%d", width, height, wide, tall);
-        width = wide; height = tall;
-    }
     s_renderer = new Renderer(app, dynamic_cast<Window*>(app->getResource(hWnd)));
     s_renderer->setVideoMode(width, height, 16);
     app->allocateResource(s_renderer);

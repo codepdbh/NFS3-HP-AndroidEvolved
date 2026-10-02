@@ -164,8 +164,7 @@ public final class LauncherActivity extends Activity {
         showFpsButton.setOnClickListener(v -> { settings.showFps = !settings.showFps; updateChips(); });
 
         TextView note = new TextView(this);
-        note.setText("La resolución dibuja el juego a más detalle. Para panorámica real, elige "
-            + "además 800×600 o más en Opciones → Gráficos del juego.");
+        note.setText("La resolución dibuja el juego a más detalle; Completa lo estira a toda la pantalla.");
         note.setTextColor(0x99FFFFFF);
         note.setTextSize(12);
         note.setGravity(Gravity.CENTER);
