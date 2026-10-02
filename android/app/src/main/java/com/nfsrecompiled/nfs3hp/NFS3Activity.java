@@ -28,11 +28,6 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
     private static native int nativeGetRenderWidth();
     private static native int nativeGetGameState();
 
-    /**
-     * The front end always runs at 640x480 and its animated backdrops draw about a
-     * thousand triangles; a race switches to the race resolution and draws far more.
-     */
-    private static final int RACE_TRIANGLES = 2500;
     private static final long RACE_AFTER_MS = 600, MENU_AFTER_MS = 1200, POLL_MS = 200;
 
     private final KeyInput input = new KeyInput();
@@ -104,7 +99,17 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
     }
 
     /** Picks the menu or race layout from what the game is drawing, unless the player fixed one. */
+    private long lastDiagnostic;
+
     private void updateLayoutMode() {
+        long uptime = android.os.SystemClock.uptimeMillis();
+        if (uptime - lastDiagnostic > 5000) {
+            lastDiagnostic = uptime;
+            android.util.Log.i("NFS3/INPUT", "state=" + nativeGetGameState() + " width=" + nativeGetRenderWidth()
+                + " triangles=" + nativeGetFrameTriangles() + " mode=" + controls.getMode()
+                + " layoutSetting=" + settings.layout + " gamepad=" + controls.isGamepadMode()
+                + " editing=" + controls.isEditing());
+        }
         if (settings.layout != ControlSettings.LAYOUT_AUTO) {
             if (candidateMode != -2) {
                 android.util.Log.i("NFS3/INPUT", "Touch layout fixed by settings: " + settings.layout);
@@ -118,8 +123,8 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
         int current = controls.getMode();
         // The game state comes from the files the game loads (track data starts
         // a race, a front-end menu ends it); the Modern Patch races at 640x480,
-        // so resolution alone cannot tell. Triangle count is a fallback.
-        boolean race = nativeGetGameState() == 1 || width > 640 || triangles >= RACE_TRIANGLES;
+        // so resolution alone cannot tell; the menus draw as many triangles as a race.
+        boolean race = nativeGetGameState() == 1 || width > 640;
         int wanted = race ? TouchControlsView.MODE_RACE : TouchControlsView.MODE_MENU;
         long now = android.os.SystemClock.uptimeMillis();
         if (wanted == current) { candidateMode = -1; return; }

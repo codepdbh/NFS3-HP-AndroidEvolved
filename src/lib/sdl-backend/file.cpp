@@ -137,7 +137,7 @@ static std::string resolvePathCaseInsensitive(const std::string& path)
 }
 
 // 1 while a race is loaded, 0 in the front end. Opening track data starts a
-// race; opening a front-end menu ends it (pause menus are named ps*.mnu).
+// race; opening a front-end menu ends it (pause menus: pause.mnu, ps*.mnu).
 static std::atomic<int> s_gameState{0};
 
 static void noteGameState(const std::string& path)
@@ -149,7 +149,8 @@ static void noteGameState(const std::string& path)
     else if (lower.find("/fedata/menus/") != std::string::npos)
     {
         const std::string name = lower.substr(lower.find_last_of('/') + 1);
-        if (name.compare(0, 2, "ps") != 0)
+        // The race preloads its pause menus (pause.mnu, ps*.mnu) right after the track.
+        if (name.compare(0, 2, "ps") != 0 && name.compare(0, 5, "pause") != 0)
             s_gameState.store(0);
     }
 }

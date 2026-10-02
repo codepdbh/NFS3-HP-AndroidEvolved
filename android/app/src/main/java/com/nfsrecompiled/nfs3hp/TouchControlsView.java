@@ -164,6 +164,8 @@ final class TouchControlsView extends View implements SensorEventListener {
 
     int getMode() { return mode; }
 
+    boolean isGamepadMode() { return gamepadMode; }
+
     boolean isEditing() { return editing; }
 
     /** Lets the player drag and resize controls; {@code done} runs when they tap LISTO. */
