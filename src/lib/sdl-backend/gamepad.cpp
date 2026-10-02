@@ -18,6 +18,9 @@ static int s_mouseX = 0, s_mouseY = 0;
 static bool s_mouseKnown = false;
 static x86::sreg32 s_mouseDx = 0, s_mouseDy = 0;
 static x86::reg8 s_mouseButtons[4] = {};
+// Presses not yet seen by a state read: a quick tap goes down and up between two
+// polls, so the next GetDeviceState still reports the button as pressed once.
+static x86::reg8 s_mouseLatched[4] = {};
 
 static void pushMouseEvent(x86::reg32 offset, x86::reg32 data)
 {
@@ -49,6 +52,7 @@ void Mouse::button(int index, bool down)
     if (index < 0 || index > 3) return;
     std::lock_guard<std::mutex> lock(s_mouseLock);
     s_mouseButtons[index] = down ? 0x80 : 0x00;
+    if (down) s_mouseLatched[index] = 0x80;
     pushMouseEvent(OFFSET_BUTTON0 + index, down ? 0x80 : 0x00);
 }
 
@@ -66,7 +70,11 @@ void Mouse::takeState(x86::sreg32& dx, x86::sreg32& dy, x86::reg8 buttons[4])
     std::lock_guard<std::mutex> lock(s_mouseLock);
     dx = s_mouseDx; dy = s_mouseDy;
     s_mouseDx = s_mouseDy = 0;
-    memcpy(buttons, s_mouseButtons, 4);
+    for (int i = 0; i < 4; ++i)
+    {
+        buttons[i] = s_mouseButtons[i] | s_mouseLatched[i];
+        s_mouseLatched[i] = 0;
+    }
 }
 
 static GamepadState s_state;
@@ -169,7 +177,14 @@ Gamepad::~Gamepad()
 
 x86::reg32 Gamepad::getCount()
 {
+#ifdef __ANDROID__
+    // The activity turns real controllers into keyboard input. Some phones list
+    // built-in parts as joysticks (Xiaomi's fingerprint reader), and NFS3 hands a
+    // detected joystick to player 1, which then ignores the keyboard and touch.
+    return 0;
+#else
     return SDL_NumJoysticks();
+#endif
 }
 
 x86::reg32 Gamepad::getButtonCount() const
