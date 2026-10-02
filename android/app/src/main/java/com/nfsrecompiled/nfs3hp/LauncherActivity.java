@@ -245,7 +245,7 @@ public final class LauncherActivity extends Activity {
         button.setStateListAnimator(null);
         button.setPadding(dp(4), 0, dp(4), 0);
         button.setMaxLines(1);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(140), dp(48));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(124), dp(44));
         params.setMargins(dp(4), dp(4), dp(4), dp(4));
         row.addView(button, params);
         return button;
