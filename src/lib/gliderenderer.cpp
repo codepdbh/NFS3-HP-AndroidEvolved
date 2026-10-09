@@ -1,3 +1,4 @@
+#include <cstring>
 #include <lib/gliderenderer.h>
 #include <lib/renderer.h>
 #include <lib/window.h>
@@ -127,6 +128,8 @@ struct GlVertex
     float       atlasSize, width, offX, offY;
 };
 
+// Initial size only: the Modern Patch's draw distance can push a busy frame
+// past this, so the buffer grows on demand.
 static const x86::reg32 s_maxVertexCount = 32000;
 static const x86::reg32 s_atlasSize = 2048;
 
@@ -134,6 +137,7 @@ GlideRenderer::GlideRenderer(Renderer* renderer)
     :   m_renderer(renderer)
     ,   m_vertices(new GlVertex[s_maxVertexCount])
     ,   m_vertexCount(0)
+    ,   m_vertexCapacity(s_maxVertexCount)
     ,   m_zBuffer(true)
     ,   m_zTest(true)
     ,   m_alphaBlend(true)
@@ -633,6 +637,14 @@ void GlideRenderer::drawTriangle(const GrVertex* a, const GrVertex* b, const GrV
     NFS2_ASSERT(65535.f - a->ooz <= 65535.f);
     NFS2_ASSERT(65535.f - b->ooz <= 65535.f);
     NFS2_ASSERT(65535.f - c->ooz <= 65535.f);
+    if (m_vertexCount + 3 > m_vertexCapacity)
+    {
+        GlVertex* grown = new GlVertex[m_vertexCapacity * 2];
+        memcpy(grown, m_vertices, sizeof(GlVertex) * m_vertexCount);
+        delete[] m_vertices;
+        m_vertices = grown;
+        m_vertexCapacity *= 2;
+    }
     m_vertices[m_vertexCount].x = a->x;
     m_vertices[m_vertexCount].y = a->y;
     m_vertices[m_vertexCount].z = a->ooz;
@@ -690,7 +702,7 @@ void GlideRenderer::drawTriangle(const GrVertex* a, const GrVertex* b, const GrV
     m_vertices[m_vertexCount].offY = float(m_textureOffsetY);
     m_vertexCount++;
 
-    NFS2_ASSERT(m_vertexCount < s_maxVertexCount);
+    NFS2_ASSERT(m_vertexCount <= m_vertexCapacity);
 }
 
 }
