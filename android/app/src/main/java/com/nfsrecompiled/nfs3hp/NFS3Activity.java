@@ -366,13 +366,23 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
 
     /**
      * Gamepads are translated to the keyboard layout the game already uses,
-     * which works without configuring a joystick inside NFS3.
+     * which works without configuring a joystick inside NFS3. The layout depends
+     * on context: in a race A accelerates (many Bluetooth pads have no analog
+     * triggers) and X brakes; in menus A confirms and B goes back.
      */
-    private static int padKey(int keyCode) {
+    private int padKey(int keyCode) {
+        boolean race = controls.getMode() == TouchControlsView.MODE_RACE;
         switch (keyCode) {
-            case KeyEvent.KEYCODE_BUTTON_A: case KeyEvent.KEYCODE_DPAD_CENTER: return KeyEvent.KEYCODE_ENTER;
-            case KeyEvent.KEYCODE_BUTTON_B: case KeyEvent.KEYCODE_BACK: return KeyEvent.KEYCODE_ESCAPE;
-            case KeyEvent.KEYCODE_BUTTON_X: return KeyEvent.KEYCODE_SPACE;
+            case KeyEvent.KEYCODE_BUTTON_A:
+                return race ? KeyEvent.KEYCODE_DPAD_UP : KeyEvent.KEYCODE_ENTER;
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+                return KeyEvent.KEYCODE_ENTER;
+            case KeyEvent.KEYCODE_BUTTON_B:
+                return race ? KeyEvent.KEYCODE_SPACE : KeyEvent.KEYCODE_ESCAPE;
+            case KeyEvent.KEYCODE_BACK:
+                return KeyEvent.KEYCODE_ESCAPE;
+            case KeyEvent.KEYCODE_BUTTON_X:
+                return race ? KeyEvent.KEYCODE_DPAD_DOWN : KeyEvent.KEYCODE_SPACE;
             case KeyEvent.KEYCODE_BUTTON_Y: return KeyEvent.KEYCODE_C;
             case KeyEvent.KEYCODE_BUTTON_L1: return KeyEvent.KEYCODE_Z;
             case KeyEvent.KEYCODE_BUTTON_R1: return KeyEvent.KEYCODE_A;
@@ -382,6 +392,14 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
             case KeyEvent.KEYCODE_BUTTON_L2: case KeyEvent.KEYCODE_DPAD_DOWN: return KeyEvent.KEYCODE_DPAD_DOWN;
             default: return 0;
         }
+    }
+
+    /** Game key pressed for each held pad button, so release matches even if the context changed. */
+    private final android.util.SparseIntArray padHeld = new android.util.SparseIntArray();
+    private int padDiagnostics = 40;
+
+    private void logPad(String what) {
+        if (padDiagnostics-- > 0) android.util.Log.i("NFS3/PAD", what);
     }
 
     @Override public boolean dispatchKeyEvent(KeyEvent event) {
@@ -396,21 +414,51 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
         if (controls == null || !isGamepadEvent(event)) return super.dispatchKeyEvent(event);
         int code = event.getKeyCode();
         boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
+        if (event.getRepeatCount() == 0)
+            logPad((down ? "down " : "up ") + KeyEvent.keyCodeToString(code) + " from " + (event.getDevice() == null ? "?" : event.getDevice().getName()));
         if (code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT) {
             if (event.getRepeatCount() == 0) {
                 padDpadSteer = !down ? 0f : code == KeyEvent.KEYCODE_DPAD_LEFT ? -1f : 1f;
                 updatePadSteering();
             }
+            controls.setGamepadMode(true);
             return true;
         }
-        int key = padKey(code);
-        if (key == 0) return super.dispatchKeyEvent(event);
         if (event.getRepeatCount() == 0) {
-            if (event.getAction() == KeyEvent.ACTION_DOWN) input.press(key);
-            else if (event.getAction() == KeyEvent.ACTION_UP) input.release(key);
+            if (down) {
+                int key = padKey(code);
+                if (key == 0) return super.dispatchKeyEvent(event);
+                padHeld.put(code, key);
+                input.press(key);
+            } else if (event.getAction() == KeyEvent.ACTION_UP) {
+                int key = padHeld.get(code);
+                if (key == 0) return padKey(code) != 0 || super.dispatchKeyEvent(event);
+                padHeld.delete(code);
+                input.release(key);
+            }
+        } else if (padKey(code) == 0) {
+            return super.dispatchKeyEvent(event);
         }
         controls.setGamepadMode(true);
         return true;
+    }
+
+    /**
+     * Trigger value in 0..1 from the first axis the device has. Ranges are read
+     * from the device: some pads report -1..1 with the trigger resting at -1.
+     */
+    private static float trigger(MotionEvent event, int... axes) {
+        InputDevice device = event.getDevice();
+        float best = 0f;
+        for (int axis : axes) {
+            InputDevice.MotionRange range = device == null ? null : device.getMotionRange(axis, event.getSource());
+            if (range == null) continue;
+            float value = event.getAxisValue(axis);
+            float min = range.getMin(), max = range.getMax();
+            float normalized = max > min ? (value - min) / (max - min) : value;
+            best = Math.max(best, Math.max(0f, Math.min(1f, normalized)));
+        }
+        return best;
     }
 
     @Override public boolean dispatchGenericMotionEvent(MotionEvent event) {
@@ -422,8 +470,9 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
         padDpadSteer = Math.abs(hatX) > 0.5f ? Math.signum(hatX) : 0f;
         updatePadSteering();
 
-        float gas = Math.max(event.getAxisValue(MotionEvent.AXIS_RTRIGGER), event.getAxisValue(MotionEvent.AXIS_GAS));
-        float brake = Math.max(event.getAxisValue(MotionEvent.AXIS_LTRIGGER), event.getAxisValue(MotionEvent.AXIS_BRAKE));
+        float gas = trigger(event, MotionEvent.AXIS_RTRIGGER, MotionEvent.AXIS_GAS);
+        float brake = trigger(event, MotionEvent.AXIS_LTRIGGER, MotionEvent.AXIS_BRAKE);
+        if (gas > 0.1f || brake > 0.1f) logPad(String.format("triggers gas=%.2f brake=%.2f", gas, brake));
         if (settings.analogTriggers) {
             // Trigger pressure becomes partial throttle; the stronger trigger wins.
             gas = gas < 0.06f ? 0f : gas;
@@ -453,6 +502,8 @@ public final class NFS3Activity extends SDLActivity implements InputManager.Inpu
     }
 
     private void releasePad() {
+        for (int i = 0; i < padHeld.size(); ++i) input.release(padHeld.valueAt(i));
+        padHeld.clear();
         padGas = edge(padGas, false, KeyEvent.KEYCODE_DPAD_UP);
         padBrake = edge(padBrake, false, KeyEvent.KEYCODE_DPAD_DOWN);
         padUp = edge(padUp, false, KeyEvent.KEYCODE_DPAD_UP);

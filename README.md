@@ -76,11 +76,13 @@ a 59-60 FPS a resolución nativa.
 | Táctil | Mando | Juego |
 |---|---|---|
 | Joystick (o botones / deslizar / inclinación) | Stick izquierdo o cruceta | Dirección |
-| GAS / FRENO | RT / LT (progresivos) | Acelerar / frenar |
-| MANO | X | Freno de mano |
+| GAS / FRENO | RT / LT (progresivos) o A / X | Acelerar / frenar |
+| MANO | B | Freno de mano |
 | Cámara · Bocina · Pausa | Y · Select · Start | Cámara · bocina · pausa |
 | — | LB / RB | Marcha − / + |
-| Tocar el menú · gesto Atrás | A · B | Aceptar · volver |
+| Tocar el menú · gesto Atrás | Cruceta · A · B | Moverse · aceptar · volver |
+
+En carrera, A y X sirven para acelerar y frenar en mandos sin gatillos analógicos.
 
 El botón ⚙ abre los ajustes de controles durante la partida.
 

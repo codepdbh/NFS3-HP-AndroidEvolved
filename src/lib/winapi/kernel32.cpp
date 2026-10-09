@@ -1276,6 +1276,7 @@ BOOL UnmapViewOfFile(WinApplication* app, x86::CPU& cpu,
     if (lpBaseAddress)
     {
         MemMap* memBlock = MemMap::findBlock(lpBaseAddress);
+        if (!memBlock) return 0;
         delete memBlock;
         return 1;
     }
@@ -1304,8 +1305,13 @@ BOOL VirtualFree(WinApplication* app, x86::CPU& cpu,
     NFS2_USE(app);
     NFS2_USE(cpu);
     NFS2_USE(dwSize);
-    NFS2_ASSERT(dwFreeType = 0x8000);
+    // Only MEM_RELEASE frees the block; MEM_DECOMMIT keeps the reservation, and
+    // deleting it here made the later MEM_RELEASE free memory owned by someone else.
+    if (!(dwFreeType & 0x8000))
+        return 1;
     MemMap* memBlock = MemMap::findBlock(lpAddress);
+    if (!memBlock || memBlock->getBlockStart() != x86::reg32(lpAddress))
+        return 0;
     delete memBlock;
     return 1;
 }

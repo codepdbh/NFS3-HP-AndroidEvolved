@@ -8,13 +8,18 @@
 #endif
 #include <lib/mutex.h>
 #include <cstdlib>
+#ifdef __ANDROID__
+# include <android/log.h>
+#endif
 
 namespace win32
 {
 
 // Room for the game's own allocations plus the Modern Patch heap (up to
 // OwnHeapLimitMb, 32 MB by default, kept in power-of-two size classes).
-static const x86::reg32 s_simulatedMemory = 160*1024*1024;
+// Long sessions fragment the 4 KB block map, so keep generous headroom; the
+// arena is reserved lazily and only touched pages cost real memory.
+static const x86::reg32 s_simulatedMemory = 256*1024*1024;
 
 x86::reg8* MemMap::s_memory = nullptr;
 x86::reg8* MemMap::s_blocks = nullptr;
@@ -102,6 +107,15 @@ MemMap::MemMap(x86::reg32 size)
             break;
         }
     }
+#ifdef __ANDROID__
+    if (m_block == x86::reg32(-1))
+    {
+        x86::reg32 used = 0;
+        for (x86::reg32 b = 0; b < s_blockCount; ++b) used += s_blocks[b] ? 1 : 0;
+        __android_log_print(ANDROID_LOG_ERROR, "NFS3/MEM", "out of guest memory: request %u blocks, %u/%u used in %zu maps",
+                            m_blockCount, used, s_blockCount, s_memMaps.size());
+    }
+#endif
     NFS2_ASSERT(m_block != x86::reg32(-1));
     for (x86::reg32 s = m_block; s < m_block + m_blockCount; ++s)
     {
